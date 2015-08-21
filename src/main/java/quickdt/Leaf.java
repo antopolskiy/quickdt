@@ -1,8 +1,9 @@
 package quickdt;
 
+import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
+
 import java.io.PrintStream;
 import java.io.Serializable;
-import java.util.Map;
 import java.util.Set;
 
 public class Leaf extends Node {
@@ -22,29 +23,28 @@ public class Leaf extends Node {
      */
     public final ClassificationCounter classificationCounts;
 
-    protected transient volatile Map.Entry<Serializable, Double> bestClassificationEntry = null;
+    protected transient volatile Object2DoubleMap.Entry<Serializable> bestClassificationEntry = null;
 
     public Leaf(Node parent, final Iterable<? extends AbstractInstance> instances, final int depth) {
-		super(parent);
+        super(parent);
         classificationCounts = ClassificationCounter.countAll(instances);
-         exampleCount = classificationCounts.getTotal();
-         this.depth = depth;
-	}
+        exampleCount = classificationCounts.getTotal();
+        this.depth = depth;
+    }
 
     /**
      *
      * @return The most likely classification
      */
-
     public Serializable getBestClassification() {
         return getBestClassificationEntry().getKey();
     }
 
-    protected synchronized Map.Entry<Serializable, Double> getBestClassificationEntry() {
+    protected synchronized Object2DoubleMap.Entry<Serializable> getBestClassificationEntry() {
         if (bestClassificationEntry != null) return bestClassificationEntry;
 
-        for (Map.Entry<Serializable, Double> e : classificationCounts.getCounts().entrySet()) {
-            if (bestClassificationEntry == null || e.getValue() > bestClassificationEntry.getValue()) {
+        for (Object2DoubleMap.Entry<Serializable> e : classificationCounts.getCounts().object2DoubleEntrySet()) {
+            if (bestClassificationEntry == null || e.getDoubleValue() > bestClassificationEntry.getDoubleValue()) {
                 bestClassificationEntry = e;
             }
         }

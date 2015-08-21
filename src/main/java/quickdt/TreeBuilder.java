@@ -278,11 +278,13 @@ public final class TreeBuilder implements PredictiveModelBuilder<Tree> {
     private boolean shouldWeIgnoreThisValue(final ClassificationCounter testValCounts) {
         double lowestClassificationCount = Double.MAX_VALUE;
         for (double classificationCount : testValCounts.getCounts().values()) {
+            // NOTE: when using fastutil-map backed collection counters, this will auto-box and -unbox the doubles.
+            // consider rewriting to a custom iterator-based loop when this turns out to be a performance issue.
             if (classificationCount < lowestClassificationCount) {
                 lowestClassificationCount = classificationCount;
             }
         }
-	    return lowestClassificationCount < this.minNominalAttributeValueOccurances;
+        return lowestClassificationCount < this.minNominalAttributeValueOccurances;
     }
 
     protected Pair<? extends Branch, Double> createOrdinalNode(Node parent, final String attribute,
