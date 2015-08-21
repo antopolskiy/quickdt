@@ -10,9 +10,9 @@ public final class OrdinalBranch extends Branch {
     private static final  Logger logger =  LoggerFactory.getLogger(OrdinalBranch.class);
 
 	private static final long serialVersionUID = 4456176008067679801L;
-	public final double threshold;
+	public final float threshold;
 
-	public OrdinalBranch(Node parent, final String attribute, final double threshold) {
+	public OrdinalBranch(Node parent, final String attribute, final float threshold) {
 		super(parent, attribute);
 		this.threshold = threshold;
 
@@ -24,8 +24,8 @@ public final class OrdinalBranch extends Branch {
         if (!(value instanceof Number)) {
             throw new RuntimeException("Expecting a number as the value of "+attribute+" but got "+value +" of type "+value.getClass().getSimpleName());
         }
-        final double valueAsDouble = ((Number) value).doubleValue();
-		return valueAsDouble > threshold;
+        final float valueAsFloat = ((Number) value).floatValue();
+		return valueAsFloat > threshold;
 	}
 
 	@Override
