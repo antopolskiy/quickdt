@@ -1,16 +1,17 @@
 package quickdt;
 
 import com.google.common.collect.Maps;
+import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
+import it.unimi.dsi.fastutil.objects.Object2DoubleMaps;
+import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
 import org.javatuples.Pair;
 
 import java.io.Serializable;
-import java.util.Collections;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 
 public class ClassificationCounter implements Serializable {
-	private final Map<Serializable, Double> counts = Maps.newHashMap();
+	private final Object2DoubleMap<Serializable> counts = new Object2DoubleOpenHashMap<Serializable>();
 
 	private double total = 0;
 
@@ -33,8 +34,8 @@ public class ClassificationCounter implements Serializable {
 		return Pair.with(totals, result);
 	}
 
-    public Map<Serializable, Double> getCounts() {
-        return Collections.unmodifiableMap(counts);
+    public Object2DoubleMap<Serializable> getCounts() {
+        return Object2DoubleMaps.unmodifiable(counts);
     }
 
 
@@ -47,20 +48,13 @@ public class ClassificationCounter implements Serializable {
 	}
 
 	public void addClassification(final Serializable classification, double weight) {
-		Double c = counts.get(classification);
-		if (c == null) {
-			c = 0.0;
-		}
+		double c = counts.getDouble(classification); // should return 0.0 on absent values
 		total+= weight;
 		counts.put(classification, c + weight);
 	}
 
 	public double getCount(final Serializable classification) {
-		final Double c = counts.get(classification);
-		if (c == null)
-			return 0.0;
-		else
-			return c;
+		return counts.getDouble(classification);
 	}
 
 	public Set<Serializable> allClassifications() {
@@ -70,8 +64,8 @@ public class ClassificationCounter implements Serializable {
 	public ClassificationCounter add(final ClassificationCounter other) {
 		final ClassificationCounter result = new ClassificationCounter();
 		result.counts.putAll(counts);
-		for (final Entry<Serializable, Double> e : other.counts.entrySet()) {
-			result.counts.put(e.getKey(), getCount(e.getKey()) + e.getValue());
+		for (final Object2DoubleMap.Entry<Serializable> e : other.counts.object2DoubleEntrySet()) {
+			result.counts.put(e.getKey(), getCount(e.getKey()) + e.getDoubleValue());
 		}
 		result.total = total + other.total;
 		return result;
@@ -79,8 +73,8 @@ public class ClassificationCounter implements Serializable {
 
 	public ClassificationCounter subtract(final ClassificationCounter other) {
 		final ClassificationCounter result = new ClassificationCounter();
-		for (final Entry<Serializable, Double> e : counts.entrySet()) {
-			result.counts.put(e.getKey(), e.getValue() - other.getCount(e.getKey()));
+		for (final Object2DoubleMap.Entry<Serializable> e : counts.object2DoubleEntrySet()) {
+			result.counts.put(e.getKey(), e.getDoubleValue() - other.getCount(e.getKey()));
 		}
 		result.total = total - other.total;
 		return result;
@@ -91,9 +85,9 @@ public class ClassificationCounter implements Serializable {
 	}
 
 	public Pair<Serializable, Double> mostPopular() {
-		Entry<Serializable, Double> best = null;
-		for (final Entry<Serializable, Double> e : counts.entrySet()) {
-			if (best == null || e.getValue() > best.getValue()) {
+		Object2DoubleMap.Entry<Serializable> best = null;
+		for (final Object2DoubleMap.Entry<Serializable> e : counts.object2DoubleEntrySet()) {
+			if (best == null || e.getDoubleValue() > best.getDoubleValue()) {
 				best = e;
 			}
 		}

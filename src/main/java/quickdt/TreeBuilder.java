@@ -6,7 +6,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.twitter.common.stats.ReservoirSampler;
-import com.twitter.common.util.*;
 import com.twitter.common.util.Random;
 import org.javatuples.Pair;
 import org.slf4j.Logger;
@@ -14,8 +13,13 @@ import org.slf4j.LoggerFactory;
 import quickdt.scorers.Scorer1;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 public final class TreeBuilder implements PredictiveModelBuilder<Tree> {
     private static final  Logger logger =  LoggerFactory.getLogger(TreeBuilder.class);
@@ -56,19 +60,19 @@ public final class TreeBuilder implements PredictiveModelBuilder<Tree> {
         return new Tree(buildTree(null, trainingData, 0, createOrdinalSplits(trainingData)));
 	}
 
-	private double[] createOrdinalSplit(final Iterable<? extends AbstractInstance> trainingData, final String attribute) {
+	private float[] createOrdinalSplit(final Iterable<? extends AbstractInstance> trainingData, final String attribute) {
         logger.debug("Creating ordinal split for attribute {}", attribute);
-		final ReservoirSampler<Double> rs = new ReservoirSampler<Double>(1000, random);
+		final ReservoirSampler<Float> rs = new ReservoirSampler<Float>(1000, random);
 		for (final AbstractInstance i : trainingData) {
-			rs.sample(((Number) i.getAttributes().get(attribute)).doubleValue());
+			rs.sample(((Number) i.getAttributes().get(attribute)).floatValue());
 		}
-		final ArrayList<Double> al = Lists.newArrayList();
-		for (final Double d : rs.getSamples()) {
+		final ArrayList<Float> al = Lists.newArrayList();
+		for (final Float d : rs.getSamples()) {
 			al.add(d);
 		}
 		Collections.sort(al);
 
-		final double[] split = new double[ORDINAL_TEST_SPLITS - 1];
+		final float[] split = new float[ORDINAL_TEST_SPLITS - 1];
 		for (int x = 0; x < split.length; x++) {
 			split[x] = al.get((x + 1) * al.size() / (split.length + 1));
 		}
@@ -77,32 +81,32 @@ public final class TreeBuilder implements PredictiveModelBuilder<Tree> {
 		return split;
 	}
 
-	private Map<String, double[]> createOrdinalSplits(final Iterable<? extends AbstractInstance> trainingData) {
+	private Map<String, float[]> createOrdinalSplits(final Iterable<? extends AbstractInstance> trainingData) {
         logger.debug("Creating ordinal splits");
-		final Map<String, ReservoirSampler<Double>> rsm = Maps.newHashMap();
+		final Map<String, ReservoirSampler<Float>> rsm = Maps.newHashMap();
 		for (final AbstractInstance i : trainingData) {
 			for (final Entry<String, Serializable> e : i.getAttributes().entrySet()) {
 				if (e.getValue() instanceof Number) {
-					ReservoirSampler<Double> rs = rsm.get(e.getKey());
+					ReservoirSampler<Float> rs = rsm.get(e.getKey());
 					if (rs == null) {
-						rs = new ReservoirSampler<Double>(1000, random);
+						rs = new ReservoirSampler<Float>(1000, random);
 						rsm.put(e.getKey(), rs);
 					}
-					rs.sample(((Number) e.getValue()).doubleValue());
+					rs.sample(((Number) e.getValue()).floatValue());
 				}
 			}
 		}
 
-		final Map<String, double[]> splits = Maps.newHashMap();
+		final Map<String, float[]> splits = Maps.newHashMap();
 
-		for (final Entry<String, ReservoirSampler<Double>> e : rsm.entrySet()) {
-			final ArrayList<Double> al = Lists.newArrayList();
-			for (final Double d : e.getValue().getSamples()) {
+		for (final Entry<String, ReservoirSampler<Float>> e : rsm.entrySet()) {
+			final ArrayList<Float> al = Lists.newArrayList();
+			for (final Float d : e.getValue().getSamples()) {
 				al.add(d);
 			}
 			Collections.sort(al);
 
-			final double[] split = new double[ORDINAL_TEST_SPLITS - 1];
+			final float[] split = new float[ORDINAL_TEST_SPLITS - 1];
 			for (int x = 0; x < split.length; x++) {
 				split[x] = al.get((x + 1) * al.size() / (split.length + 2));
 			}
@@ -113,7 +117,7 @@ public final class TreeBuilder implements PredictiveModelBuilder<Tree> {
 	}
 
 	protected Node buildTree(Node parent, final Iterable<? extends AbstractInstance> trainingData, final int depth,
-                             final Map<String, double[]> splits) {
+                             final Map<String, float[]> splits) {
         logger.debug("Building tree at depth {}", depth);
 		final Leaf thisLeaf = new Leaf(parent, trainingData, depth);
 		if (depth == maxDepth || thisLeaf.getBestClassificationProbability() >= minProbability)
@@ -160,7 +164,7 @@ public final class TreeBuilder implements PredictiveModelBuilder<Tree> {
 			// Its a bad sign when this happens, normally something to debug
 			return thisLeaf;
 
-		double[] oldSplit = null;
+		float[] oldSplit = null;
 
 		final LinkedList<? extends AbstractInstance> trueTrainingSet = Lists.newLinkedList(Iterables.filter(trainingData,
 				bestNode.getInPredicate()));
@@ -274,26 +278,25 @@ public final class TreeBuilder implements PredictiveModelBuilder<Tree> {
     private boolean shouldWeIgnoreThisValue(final ClassificationCounter testValCounts) {
         double lowestClassificationCount = Double.MAX_VALUE;
         for (double classificationCount : testValCounts.getCounts().values()) {
+            // NOTE: when using fastutil-map backed collection counters, this will auto-box and -unbox the doubles.
+            // consider rewriting to a custom iterator-based loop when this turns out to be a performance issue.
             if (classificationCount < lowestClassificationCount) {
                 lowestClassificationCount = classificationCount;
             }
         }
-        if (lowestClassificationCount < this.minNominalAttributeValueOccurances) {
-            return true;
-        }
-        return false;
+        return lowestClassificationCount < this.minNominalAttributeValueOccurances;
     }
 
     protected Pair<? extends Branch, Double> createOrdinalNode(Node parent, final String attribute,
 			final Iterable<? extends AbstractInstance> instances,
-			final double[] splits) {
+			final float[] splits) {
         logger.debug("Creating ordinal node for attribute {}", attribute);
 
 		double bestScore = 0;
-		double bestThreshold = 0;
+		float bestThreshold = 0;
 
-		double lastThreshold = Double.MIN_VALUE;
-		for (final double threshold : splits) {
+		float lastThreshold = Float.MIN_VALUE;
+		for (final float threshold : splits) {
 			// Sometimes we can get a few thresholds the same, avoid wasted
 			// effort when we do
 			if (threshold == lastThreshold) {
@@ -305,7 +308,7 @@ public final class TreeBuilder implements PredictiveModelBuilder<Tree> {
 				@Override
 				public boolean apply(final AbstractInstance input) {
 					try {
-						return ((Number) input.getAttributes().get(attribute)).doubleValue() > threshold;
+						return ((Number) input.getAttributes().get(attribute)).floatValue() > threshold;
 					} catch (final ClassCastException e) { // Kludge, need to
 						// handle better
 						return false;
@@ -317,7 +320,7 @@ public final class TreeBuilder implements PredictiveModelBuilder<Tree> {
 				@Override
 				public boolean apply(final AbstractInstance input) {
 					try {
-						return ((Number) input.getAttributes().get(attribute)).doubleValue() <= threshold;
+						return ((Number) input.getAttributes().get(attribute)).floatValue() <= threshold;
 					} catch (final ClassCastException e) { // Kludge, need to
 						// handle better
 						return false;
