@@ -489,6 +489,7 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 					|| valueWithClassificationCounter.attributeValue.equals(MISSING_VALUE)) {
 				continue;
 			}
+			// skips a value of a categorical variable if #occurences is below threshold
 			if (this.minCategoricalAttributeValueOccurances > 0) {
 				if (shouldWeIgnoreThisValue(testValCounts)) {
 					continue;
@@ -531,7 +532,7 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 
 		// the in-set
 //		final Set<Serializable> returnSet = (random.nextDouble() > 0.5) ? inSet : outSet;
-		final Set<Serializable> returnSet = inSet.size() < outSet.size() ? inSet : outSet;
+		final Set<Serializable> returnSet = inSet.size() <= outSet.size() ? inSet : outSet;
 
 		Pair<CategoricalBranch, Double> bestPair = Pair
 				.with(new CategoricalBranch(parent, attribute, returnSet), bestScore);

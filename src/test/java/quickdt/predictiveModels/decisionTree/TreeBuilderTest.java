@@ -175,13 +175,9 @@ public class TreeBuilderTest {
 		String line;
 		String[] header = null;
 
-		try (BufferedReader br = new BufferedReader(
-				new InputStreamReader(new GZIPInputStream(Benchmarks.class.getClassLoader()
-						.getResourceAsStream("quickdt/rpa-476.csv.gz"))))) {
-//                new GZIPInputStream(Benchmarks.class.getClassLoader().getResourceAsStream("quickdt/bac-50000.csv.gz"))))) {
-//				new GZIPInputStream(Benchmarks.class.getClassLoader()
-//						.getResourceAsStream("quickdt/bac-50000.csv.gz"))))) {
-//						.getResourceAsStream("quickdt/bac-50000-2class.csv.gz"))))) {
+		try (BufferedReader br = new BufferedReader(new InputStreamReader(
+				new GZIPInputStream(Benchmarks.class.getClassLoader().getResourceAsStream(
+						"quickdt/synthetic/basic_1_catvar_10_levels.csv.gz"))))) {
 			while ((line = br.readLine()) != null) {
 				if (header == null) {
 					header = line.split(DELIMITER);
@@ -211,15 +207,13 @@ public class TreeBuilderTest {
 
 	@Test
 	public void rpaTest() throws Exception {
-		final List<Instance> instances = loadRpaDataset(5);
+		final List<Instance> instances = loadRpaDataset(1);
 		for (int n = 1; n < 10; n++) {
 			logger.debug("");
 			logger.debug("== Testing for {} categories ==", n);
 //			final TreeBuilder tb = new TreeBuilder(new SplitDiffScorer())
 			final TreeBuilder tb = new TreeBuilder()
 //			final TreeBuilder tb = new TreeBuilder(new GiniImpurityScorer())
-					.minLeafInstances(3).minCategoricalAttributeValueOccurances(3)
-//					.smallTrainingSetLimit(3)
 					.minimumScore(1e-12).maxCategoricalInSetSize(n);
 			final Tree tree = tb.buildPredictiveModel(instances);
 			final Node node = tree.node;
