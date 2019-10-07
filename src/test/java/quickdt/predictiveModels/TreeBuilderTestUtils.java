@@ -1,5 +1,7 @@
 package quickdt.predictiveModels;
 
+import org.apache.commons.lang.StringUtils;
+import org.testng.Assert;
 import quickdt.Misc;
 import quickdt.data.Attributes;
 import quickdt.data.HashMapAttributes;
@@ -8,13 +10,17 @@ import quickdt.data.Instance;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.zip.GZIPInputStream;
 
 /**
  * Created by Chris on 5/14/2014.
  */
 public class TreeBuilderTestUtils {
-
     public static List<Instance> getInstances(int numInstances) {
         final List<Instance> instances = new ArrayList<>();
         for (int x = 0; x < numInstances; x++) {
