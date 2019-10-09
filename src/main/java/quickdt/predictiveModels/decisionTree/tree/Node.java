@@ -1,25 +1,30 @@
 package quickdt.predictiveModels.decisionTree.tree;
 
-import quickdt.data.Attributes;
-
 import java.io.PrintStream;
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
+
+import quickdt.data.Attributes;
 
 public abstract class Node implements Serializable {
-    private static final long serialVersionUID = -8713974861744567620L;
+	private static final long serialVersionUID = -8713974861744567620L;
 
-    public abstract void dump(int indent, PrintStream ps);
+	public abstract void dump(int indent, PrintStream ps);
 
-    public final Node parent;
+	public final Branch parent;
 
-    public Node(Node parent) {
-        this.parent = parent;
-    }
+	public Node(Branch parent) {
+		this.parent = parent;
+	}
 
+	public boolean isRoot() {
+		return parent == null;
+	}
 
 	/**
 	 * Writes a textual representation of this tree to a PrintStream
-	 * 
+	 *
 	 * @param ps
 	 */
 	public void dump(final PrintStream ps) {
@@ -28,16 +33,18 @@ public abstract class Node implements Serializable {
 
 	/**
 	 * Get a label for a given set of HashMapAttributes
-	 * 
+	 *
 	 * @param attributes
 	 * @return
 	 */
 	public abstract Leaf getLeaf(Attributes attributes);
 
+	public abstract List<Leaf> collectLeaves();
+
 	/**
 	 * Return the mean depth of leaves in the tree. A lower number generally
 	 * indicates that the decision tree learner has done a better job.
-	 * 
+	 *
 	 * @return
 	 */
 	public double meanDepth() {
@@ -48,21 +55,47 @@ public abstract class Node implements Serializable {
 
 	/**
 	 * Return the number of nodes in this decision tree.
-	 * 
+	 *
 	 * @return
 	 */
 	public abstract int size();
 
-    @Override
-    public abstract boolean equals(final Object obj);
+	abstract ClassificationCounter getClassificationCounter();
 
-    @Override
-    public abstract int hashCode();
+	@Override
+	public abstract boolean equals(final Object obj);
 
-    protected abstract void calcMeanDepth(LeafDepthStats stats);
+	@Override
+	public abstract int hashCode();
+
+	protected abstract void calcMeanDepth(LeafDepthStats stats);
+
+//	public abstract void reduceDepth();
+
+	protected abstract Leaf collapse(int newDepth);
 
 	protected static class LeafDepthStats {
-		int ttlDepth = 0;
+		int ttlDepth   = 0;
 		int ttlSamples = 0;
+	}
+
+	public List<Leaf> pruneDeepestLeaves() {
+		int depth = 0;
+		List<Leaf> leaves = this.collectLeaves();
+		List<Leaf> maxDepthLeaves = new ArrayList<>(leaves.size());
+		for (Leaf leaf : leaves) {
+			if (leaf.depth > depth) {
+				depth = leaf.depth;
+				maxDepthLeaves = new ArrayList<>(leaves.size());
+			}
+			if (leaf.depth == depth) {
+				maxDepthLeaves.add(leaf);
+			}
+		}
+		leaves = new ArrayList<>(leaves.size());
+		for (Leaf leaf : maxDepthLeaves) {
+			leaves.add(leaf.parent.collapse(depth - 1));
+		}
+		return leaves;
 	}
 }

@@ -1,11 +1,13 @@
 package quickdt.predictiveModels.decisionTree.tree;
 
+import java.io.PrintStream;
+import java.util.LinkedList;
+import java.util.List;
+
 import com.google.common.base.Predicate;
+
 import quickdt.data.AbstractInstance;
 import quickdt.data.Attributes;
-
-import java.io.PrintStream;
-
 
 public abstract class Branch extends Node {
 	private static final long serialVersionUID = 8290012786245422175L;
@@ -14,9 +16,9 @@ public abstract class Branch extends Node {
 
 	public Node trueChild, falseChild;
 
-	public Branch(Node parent, final String attribute) {
+	public Branch(Branch parent, final String attribute) {
 		super(parent);
-        this.attribute = attribute;
+		this.attribute = attribute;
 	}
 
 	public abstract boolean decide(Attributes attributes);
@@ -48,10 +50,11 @@ public abstract class Branch extends Node {
 
 	@Override
 	public Leaf getLeaf(final Attributes attributes) {
-		if (decide(attributes))
+		if (decide(attributes)) {
 			return trueChild.getLeaf(attributes);
-		else
+		} else {
 			return falseChild.getLeaf(attributes);
+		}
 	}
 
 	@Override
@@ -68,6 +71,33 @@ public abstract class Branch extends Node {
 		falseChild.dump(indent + 2, ps);
 	}
 
+	@Override
+	public List<Leaf> collectLeaves() {
+		List<Leaf> result = new LinkedList<>(trueChild.collectLeaves());
+		result.addAll(falseChild.collectLeaves());
+		return result;
+	}
+
+	@Override
+	protected Leaf collapse(int newDepth) {
+		Leaf newLeaf = new Leaf(parent, getClassificationCounter(), newDepth);
+
+		if (!isRoot()) {
+			if (parent.trueChild.equals(this)) {
+				parent.trueChild = newLeaf;
+			} else {
+				parent.falseChild = newLeaf;
+			}
+		}
+		return newLeaf;
+	}
+
+	@Override
+	ClassificationCounter getClassificationCounter() {
+		return ClassificationCounter.merge(trueChild.getClassificationCounter(),
+				falseChild.getClassificationCounter());
+	}
+
 	public abstract String toNotString();
 
 	@Override
@@ -76,26 +106,35 @@ public abstract class Branch extends Node {
 		falseChild.calcMeanDepth(stats);
 	}
 
-    @Override
-    public boolean equals(final Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+	@Override
+	public boolean equals(final Object o) {
+		if (this == o) {
+			return true;
+		}
+		if (o == null || getClass() != o.getClass()) {
+			return false;
+		}
 
-        final Branch branch = (Branch) o;
+		final Branch branch = (Branch) o;
 
-        if (!attribute.equals(branch.attribute)) return false;
-        if (!falseChild.equals(branch.falseChild)) return false;
-        if (!trueChild.equals(branch.trueChild)) return false;
+		if (!attribute.equals(branch.attribute)) {
+			return false;
+		}
+		if (!falseChild.equals(branch.falseChild)) {
+			return false;
+		}
+		if (!trueChild.equals(branch.trueChild)) {
+			return false;
+		}
 
-        return true;
-    }
+		return true;
+	}
 
-    @Override
-    public int hashCode() {
-        int result = attribute.hashCode();
-        result = 31 * result + trueChild.hashCode();
-        result = 31 * result + falseChild.hashCode();
-        return result;
-    }
+	@Override
+	public int hashCode() {
+		int result = attribute.hashCode();
+		result = 31 * result + trueChild.hashCode();
+		result = 31 * result + falseChild.hashCode();
+		return result;
+	}
 }
-

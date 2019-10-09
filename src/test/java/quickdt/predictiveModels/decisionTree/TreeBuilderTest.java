@@ -31,6 +31,7 @@ import quickdt.predictiveModels.TreeBuilderTestUtils;
 import quickdt.predictiveModels.decisionTree.scorers.SplitDiffScorer;
 import quickdt.predictiveModels.decisionTree.tree.Branch;
 import quickdt.predictiveModels.decisionTree.tree.CategoricalBranch;
+import quickdt.predictiveModels.decisionTree.tree.Leaf;
 import quickdt.predictiveModels.decisionTree.tree.Node;
 
 public class TreeBuilderTest {
@@ -176,6 +177,8 @@ public class TreeBuilderTest {
 
 	private void logBranchRecursively(Branch branch) {
 		logger.debug(branch.toString());
+		logger.debug("true: {}; false: {}", branch.trueChild.toString(),
+				branch.falseChild.toString());
 		if (branch.trueChild instanceof Branch) {
 			logBranchRecursively((Branch) branch.trueChild);
 		}
@@ -184,7 +187,11 @@ public class TreeBuilderTest {
 		}
 	}
 
-	public static List<Instance> loadRpaDataset(int classificationField, String fileName,
+	public static List<Instance> loadCsvDataset(int classificationField, String fileName) {
+		return loadCsvDataset(classificationField, fileName, new ArrayList<>());
+	}
+
+	public static List<Instance> loadCsvDataset(int classificationField, String fileName,
 			List<Integer> numericColumns) {
 		List<Instance> result = new LinkedList<>();
 		String classification;
@@ -252,7 +259,7 @@ public class TreeBuilderTest {
 
 	@Test
 	public void testBasicCategoricalSplit() throws IOException, ClassNotFoundException {
-		final List<Instance> instances = loadRpaDataset(1,
+		final List<Instance> instances = loadCsvDataset(1,
 				"quickdt/synthetic/basicCategorical.csv.gz", new ArrayList<>());
 		for (int n = 1; n < 10; n++) {
 			logger.debug("");
@@ -272,7 +279,7 @@ public class TreeBuilderTest {
 
 	@Test
 	public void testBasicNumericSingleSplit() throws IOException, ClassNotFoundException {
-		final List<Instance> instances = loadRpaDataset(1,
+		final List<Instance> instances = loadCsvDataset(1,
 				"quickdt/synthetic/basicSingleSplitNumeric.csv.gz", Arrays.asList(0));
 		for (int n = 1; n < 10; n++) {
 			logger.debug("");
@@ -292,7 +299,7 @@ public class TreeBuilderTest {
 
 	@Test
 	public void testBasicNumericMultipleSplit() throws IOException, ClassNotFoundException {
-		final List<Instance> instances = loadRpaDataset(1,
+		final List<Instance> instances = loadCsvDataset(1,
 				"quickdt/synthetic/basicMultipleSplitNumeric.csv.gz", Arrays.asList(0));
 		final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).smallTrainingSetLimit(2);
 		final Tree tree = tb.buildPredictiveModel(instances);
@@ -305,7 +312,7 @@ public class TreeBuilderTest {
 
 	@Test
 	public void testBasicNumericWithNaN() throws IOException, ClassNotFoundException {
-		final List<Instance> instances = loadRpaDataset(1,
+		final List<Instance> instances = loadCsvDataset(1,
 				"quickdt/synthetic/basicNumericWithNaN.csv.gz", Arrays.asList(0));
 		final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).smallTrainingSetLimit(2);
 		final Tree tree = tb.buildPredictiveModel(instances);
@@ -320,7 +327,7 @@ public class TreeBuilderTest {
 	public void testBasicNumericWithNaNSetToMean() throws IOException, ClassNotFoundException {
 
 		List<Integer> numericColumns = Arrays.asList(0);
-		List<Instance> instances = loadRpaDataset(1, "quickdt/synthetic/basicNumericWithNaN.csv.gz",
+		List<Instance> instances = loadCsvDataset(1, "quickdt/synthetic/basicNumericWithNaN.csv.gz",
 				numericColumns);
 		final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).smallTrainingSetLimit(2);
 		instances = setNumericNullsToMean(instances, new String[] { "NUM" });
@@ -361,7 +368,7 @@ public class TreeBuilderTest {
 	public void testBasicNumericWithNaNLimitCategory() throws IOException, ClassNotFoundException {
 
 		List<Integer> numericColumns = Arrays.asList(0);
-		List<Instance> instances = loadRpaDataset(1,
+		List<Instance> instances = loadCsvDataset(1,
 				"quickdt/synthetic/basicLargerNumericWithNaN.csv.gz", numericColumns);
 		final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).smallTrainingSetLimit(2)
 				.maxCategoricalInSetSize(2);
@@ -373,6 +380,30 @@ public class TreeBuilderTest {
 		TreeBuilderTestUtils.serializeDeserialize(node);
 
 		logBranchRecursively((Branch) node);
+	}
+
+	public int getMaxDepth(Node node) {
+		Leaf leaf = node.collectLeaves().stream().max((x, y) -> x.depth - y.depth).get();
+		return leaf.depth;
+	}
+
+	@Test
+	public void testReduceDepth() throws Exception {
+		final List<Instance> instances = loadCsvDataset(1,
+				"quickdt/synthetic/basicCategorical.csv.gz");
+		final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).maxCategoricalInSetSize(1);
+		final Tree tree = tb.buildPredictiveModel(instances);
+		final Node root = tree.node;
+
+//		TreeBuilderTestUtils.serializeDeserialize(root);
+
+		for (int depth = getMaxDepth(root); depth > 1; depth--) {
+			Assert.assertEquals(depth, getMaxDepth(root));
+			tree.pruneDeepestLeaves();
+			logger.debug("");
+			logBranchRecursively((Branch) root);
+
+		}
 	}
 
 }

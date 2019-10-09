@@ -13,9 +13,9 @@ public final class CategoricalBranch extends Branch {
 	private static final long      serialVersionUID = -1723969623146234761L;
 	public final Set<Serializable> inSet;
 
-	public CategoricalBranch(Node parent, final String attribute, final Set<Serializable> inSet) {
+	public CategoricalBranch(Branch parent, final String attribute, final Set<Serializable> inSet) {
 		super(parent, attribute);
-        this.inSet = Sets.newHashSet(inSet);
+		this.inSet = Sets.newHashSet(inSet);
 
 	}
 
@@ -23,8 +23,8 @@ public final class CategoricalBranch extends Branch {
 	public boolean decide(final Attributes attributes) {
 		Serializable attributeVal = attributes.get(attribute);
 		if (attributeVal == null) {
-            attributeVal = MISSING_VALUE;
-        }
+			attributeVal = MISSING_VALUE;
+		}
 		return inSet.contains(attributeVal);
 	}
 
@@ -41,20 +41,20 @@ public final class CategoricalBranch extends Branch {
 	@Override
 	public boolean equals(final Object o) {
 		if (this == o) {
-            return true;
-        }
+			return true;
+		}
 		if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
+			return false;
+		}
 		if (!super.equals(o)) {
-            return false;
-        }
+			return false;
+		}
 
 		final CategoricalBranch that = (CategoricalBranch) o;
 
 		if (!inSet.equals(that.inSet)) {
-            return false;
-        }
+			return false;
+		}
 
 		return true;
 	}

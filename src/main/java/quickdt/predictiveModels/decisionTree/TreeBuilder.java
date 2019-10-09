@@ -245,7 +245,7 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 	 *                     splits
 	 * @return
 	 */
-	private Node buildTree(Node parent, final Iterable<? extends AbstractInstance> trainingData,
+	private Node buildTree(Branch parent, final Iterable<? extends AbstractInstance> trainingData,
 			final int depth, final Map<String, double[]> splits) {
 		Preconditions.checkArgument(!Iterables.isEmpty(trainingData),
 				"At Depth: " + depth + ". Can't build a tree with no training data");
@@ -376,7 +376,7 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 		}
 	}
 
-	private Pair<? extends Branch, Double> getBestNodePair(Node parent,
+	private Pair<? extends Branch, Double> getBestNodePair(Branch parent,
 			final Iterable<? extends AbstractInstance> trainingData,
 			final Map<String, double[]> splits) {
 		// should not be doing the following operation every time we call buildTree
@@ -472,7 +472,7 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 		return attributeCharacteristics;
 	}
 
-	private Pair<? extends Branch, Double> createCategoricalNode(Node parent,
+	private Pair<? extends Branch, Double> createCategoricalNode(Branch parent,
 			final String attribute, final Iterable<? extends AbstractInstance> instances) {
 		if (binaryClassifications) {
 			return createTwoClassCategoricalNode(parent, attribute, instances);
@@ -481,7 +481,7 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 		}
 	}
 
-	private Pair<? extends Branch, Double> createTwoClassCategoricalNode(Node parent,
+	private Pair<? extends Branch, Double> createTwoClassCategoricalNode(Branch parent,
 			final String attribute, final Iterable<? extends AbstractInstance> instances) {
 
 		double bestScore = 0;
@@ -566,7 +566,7 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 		return bestPair;
 	}
 
-	private Pair<? extends Branch, Double> createNClassCategoricalNode(Node parent,
+	private Pair<? extends Branch, Double> createNClassCategoricalNode(Branch parent,
 			final String attribute, final Iterable<? extends AbstractInstance> instances) {
 
 		final Set<Serializable> values = getAttrinbuteValues(instances, attribute);
@@ -677,7 +677,7 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 		return totalCounts < minCategoricalAttributeValueOccurances;
 	}
 
-	private Pair<? extends Branch, Double> createNumericNode(Node parent, final String attribute,
+	private Pair<? extends Branch, Double> createNumericNode(Branch parent, final String attribute,
 			final Iterable<? extends AbstractInstance> instances, final double[] splits) {
 		double bestScore = 0;
 		double bestThreshold = 0;
