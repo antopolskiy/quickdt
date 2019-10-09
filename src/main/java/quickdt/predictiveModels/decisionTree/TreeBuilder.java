@@ -39,13 +39,13 @@ import quickdt.predictiveModels.decisionTree.tree.UpdatableLeaf;
 
 public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> {
 	public static final int          ORDINAL_TEST_SPLITS                          = 5;
-	public static final int          SMALL_TRAINING_SET_LIMIT                     = 9;
 	public static final int          RESERVOIR_SIZE                               = 1000;
 	public static final Serializable MISSING_VALUE                                = "%missingVALUE%83257";
 	private static final int         HARD_MINIMUM_INSTANCES_PER_CATEGORICAL_VALUE = 10;
 	private final Scorer             scorer;
 	private int                      maxDepth                                     = Integer.MAX_VALUE;
 	private int                      maxCategoricalInSetSize                      = Integer.MAX_VALUE;
+	private int                      smallTrainingSetLimit                        = 9;
 	private double                   ignoreAttributeAtNodeProbability             = 0.0;
 	private double                   minimumScore                                 = 0.00000000000001;
 	private int                      minCategoricalAttributeValueOccurances       = 0;
@@ -106,6 +106,11 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 
 	public TreeBuilder minimumScore(double minimumScore) {
 		this.minimumScore = minimumScore;
+		return this;
+	}
+
+	public TreeBuilder smallTrainingSetLimit(int smallTrainingSetLimit) {
+		this.smallTrainingSetLimit = smallTrainingSetLimit;
 		return this;
 	}
 
@@ -232,6 +237,14 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 		return split;
 	}
 
+	/**
+	 * @param parent
+	 * @param trainingData
+	 * @param depth
+	 * @param splits       Map argument -> numeric thresholds to be tested for
+	 *                     splits
+	 * @return
+	 */
 	private Node buildTree(Node parent, final Iterable<? extends AbstractInstance> trainingData,
 			final int depth, final Map<String, double[]> splits) {
 		Preconditions.checkArgument(!Iterables.isEmpty(trainingData),
@@ -280,8 +293,13 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 		}
 
 		double[] oldSplit = null;
-		// We want to temporarily replace the split for an attribute for
-		// descendants of an numeric branch, first the true split
+		// Temporarily replace the split for an attribute for
+		// descendants of an numeric branch, first the trueTrainingSet split;
+		// this is done to avoid copying the splits map at each iteration of the
+		// recursive call.
+		// instead it is temporarily changed for the subtree, and then recovered in the
+		// end to keep
+		// it consistent with the next calls, once the subtree is processed.
 		if (bestNode instanceof NumericBranch) {
 			final NumericBranch bestBranch = (NumericBranch) bestNode;
 			oldSplit = splits.get(bestBranch.attribute);
@@ -292,7 +310,7 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 		// Recurse down the true branch
 		bestNode.trueChild = buildTree(bestNode, trueTrainingSet, depth + 1, splits);
 
-		// And now replace the old split if this is an NumericBranch
+		// Now the falseTrainingSet splits
 		if (bestNode instanceof NumericBranch) {
 			final NumericBranch bestBranch = (NumericBranch) bestNode;
 			splits.put(bestBranch.attribute,
@@ -303,6 +321,8 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 		bestNode.falseChild = buildTree(bestNode, falseTrainingSet, depth + 1, splits);
 
 		// And now replace the original split if this is an NumericBranch
+		// todo: this behavior can be extracted into NumericBranch method; other
+		// branches would have empty method calls
 		if (bestNode instanceof NumericBranch) {
 			final NumericBranch bestBranch = (NumericBranch) bestNode;
 			splits.put(bestBranch.attribute, oldSplit);
@@ -415,7 +435,7 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 		int tsCount = 0;
 		for (final AbstractInstance abstractInstance : trainingData) {
 			tsCount++;
-			if (tsCount > SMALL_TRAINING_SET_LIMIT) {
+			if (tsCount > smallTrainingSetLimit) {
 				smallTrainingSet = false;
 				break;
 			}
@@ -423,6 +443,14 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 		return smallTrainingSet;
 	}
 
+	/**
+	 * Survey the data and determine for each attribute (column) if it is numeric
+	 * (all instances are of class Number, no nulls) or categorical (all other
+	 * cases).
+	 * 
+	 * @param trainingData
+	 * @return
+	 */
 	private Map<String, AttributeCharacteristics> surveyTrainingData(
 			final Iterable<? extends AbstractInstance> trainingData) {
 		// tells us if each attribute is numeric or not.
@@ -531,7 +559,6 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 		}
 
 		// the in-set
-//		final Set<Serializable> returnSet = (random.nextDouble() > 0.5) ? inSet : outSet;
 		final Set<Serializable> returnSet = inSet.size() <= outSet.size() ? inSet : outSet;
 
 		Pair<CategoricalBranch, Double> bestPair = Pair
