@@ -371,13 +371,11 @@ public class TreeBuilderTest {
 		List<Instance> instances = loadCsvDataset(1,
 				"quickdt/synthetic/basicLargerNumericWithNaN.csv.gz", numericColumns);
 		final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).smallTrainingSetLimit(2)
-				.maxCategoricalInSetSize(2);
+				.maxCategoricalInSetSize(3);
 
 //		instances = setNumericNullsToMean(instances, new String[] { "NUM" });
 		final Tree tree = tb.buildPredictiveModel(instances);
 		final Node node = tree.node;
-
-		TreeBuilderTestUtils.serializeDeserialize(node);
 
 		logBranchRecursively((Branch) node);
 	}

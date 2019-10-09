@@ -91,24 +91,7 @@ public class ClassificationCounter implements Serializable {
 					.add(new AttributeValueWithClassificationCounter(key, result.get(key)));
 		}
 		Collections.sort(attributesWithClassificationCounters,
-				new Comparator<AttributeValueWithClassificationCounter>() {
-					@Override
-					public int compare(AttributeValueWithClassificationCounter cc1,
-							AttributeValueWithClassificationCounter cc2) {
-						double p1 = cc1.classificationCounter.getCount(minorityClassification)
-								/ cc1.classificationCounter.getTotal();
-						double p2 = cc2.classificationCounter.getCount(minorityClassification)
-								/ cc2.classificationCounter.getTotal();
-
-						if (p2 > p1) {
-							return 1;
-						} else if (p1 == p2) {
-							return 0;
-						} else {
-							return -1;
-						}
-					}
-				});
+				new MinorityProportionComparator(minorityClassification));
 
 		return Pair.with(totals, attributesWithClassificationCounters);
 	}
@@ -208,4 +191,48 @@ public class ClassificationCounter implements Serializable {
 	public int hashCode() {
 		return counts.hashCode();
 	}
+
+	private static class MinorityProportionComparator
+			implements Comparator<AttributeValueWithClassificationCounter> {
+
+		Serializable minorityClassification;
+
+		public MinorityProportionComparator(Serializable minorityClassification) {
+			this.minorityClassification = minorityClassification;
+		}
+
+		@Override
+		public int compare(AttributeValueWithClassificationCounter cc1,
+				AttributeValueWithClassificationCounter cc2) {
+			double p1 = cc1.classificationCounter.getCount(minorityClassification)
+					/ cc1.classificationCounter.getTotal();
+			double p2 = cc2.classificationCounter.getCount(minorityClassification)
+					/ cc2.classificationCounter.getTotal();
+
+			return (int) Math.signum(p2 - p1);
+		}
+	}
+
+	private static class MinorityProportionAndSizeComparator
+			implements Comparator<AttributeValueWithClassificationCounter> {
+
+		Serializable minorityClassification;
+
+		public MinorityProportionAndSizeComparator(Serializable minorityClassification) {
+			this.minorityClassification = minorityClassification;
+		}
+
+		@Override
+		public int compare(AttributeValueWithClassificationCounter cc1,
+				AttributeValueWithClassificationCounter cc2) {
+			double cc1Total = cc1.classificationCounter.getTotal();
+			double p1 = cc1.classificationCounter.getCount(minorityClassification) / cc1Total;
+			double cc2Total = cc2.classificationCounter.getTotal();
+			double p2 = cc2.classificationCounter.getCount(minorityClassification) / cc2Total;
+
+			int signum = (int) Math.signum(p2 - p1);
+			return signum == 0 ? (int) Math.signum(cc2Total - cc1Total) : signum;
+		}
+	}
+
 }
