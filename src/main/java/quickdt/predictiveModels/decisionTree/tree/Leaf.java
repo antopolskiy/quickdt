@@ -63,7 +63,7 @@ public class Leaf extends Node {
 	 */
 
 	@Override
-	ClassificationCounter getClassificationCounter() {
+	public ClassificationCounter getClassificationCounter() {
 		return classificationCounts;
 	}
 
@@ -115,19 +115,6 @@ public class Leaf extends Node {
 		stats.ttlSamples += exampleCount;
 	}
 
-//	@Override
-//	public void reduceDepth() {
-//
-//	}
-
-//	@Override
-//	public void prune(int maxDepth) {
-//		if (depth > maxDepth) {
-//			Leaf newParent = parent.collapse(depth - 1);
-//			newParent.prune(maxDepth);
-//		}
-//	}
-
 	@Override
 	protected Leaf collapse(int newDepth) {
 		return this;
@@ -136,8 +123,16 @@ public class Leaf extends Node {
 	@Override
 	public String toString() {
 		StringBuilder builder = new StringBuilder();
+		for (Node n = parent; n != null; n = n.parent) {
+			builder.append(n + "->");
+		}
+		builder.append("\n");
 		for (Serializable key : getClassifications()) {
 			builder.append(key + "=" + this.getProbability(key) + " ");
+			builder.append("(matches=" + this.getTruePositives() + "; ");
+//			builder.append("exceptions=" +  + "; ");
+			builder.append("contaminations=" + this.getFalsePositives() + ")");
+			builder.append("\n");
 		}
 		return builder.toString();
 	}
@@ -154,6 +149,10 @@ public class Leaf extends Node {
 
 	public double getTruePositives() {
 		return classificationCounts.getCount(getMajorityClass());
+	}
+
+	public double getFalseNegatives(ClassificationCounter treeClassificationCounter) {
+		return treeClassificationCounter.getCount(getMajorityClass()) - getTruePositives();
 	}
 
 	public double getFalsePositives() {

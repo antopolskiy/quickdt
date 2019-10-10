@@ -8,6 +8,7 @@ import com.google.common.collect.Maps;
 
 import quickdt.data.Attributes;
 import quickdt.predictiveModels.PredictiveModel;
+import quickdt.predictiveModels.decisionTree.tree.ClassificationCounter;
 import quickdt.predictiveModels.decisionTree.tree.Leaf;
 import quickdt.predictiveModels.decisionTree.tree.Node;
 
@@ -18,16 +19,22 @@ import quickdt.predictiveModels.decisionTree.tree.Node;
 public class Tree implements PredictiveModel {
 	static final long serialVersionUID = 56394564395635672L;
 
-	public final Node node;
+	public final Node             node;
+	private ClassificationCounter classificationCounter;
 
 	protected Tree(Node tree) {
 		this.node = tree;
+		classificationCounter = node.getClassificationCounter();
 	}
 
 	@Override
 	public double getProbability(Attributes attributes, Serializable classification) {
 		Leaf leaf = node.getLeaf(attributes);
 		return leaf.getProbability(classification);
+	}
+
+	public ClassificationCounter getClassificationCounter() {
+		return classificationCounter;
 	}
 
 	public void pruneDeepestLeaves() {

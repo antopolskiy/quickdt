@@ -60,7 +60,7 @@ public abstract class Node implements Serializable {
 	 */
 	public abstract int size();
 
-	abstract ClassificationCounter getClassificationCounter();
+	public abstract ClassificationCounter getClassificationCounter();
 
 	@Override
 	public abstract boolean equals(final Object obj);
@@ -79,6 +79,10 @@ public abstract class Node implements Serializable {
 		int ttlSamples = 0;
 	}
 
+	/**
+	 * @return the newly generated leaves, notice that these are not necessarily all
+	 *         the leaves of the new highest depth
+	 */
 	public List<Leaf> pruneDeepestLeaves() {
 		int depth = 0;
 		List<Leaf> leaves = this.collectLeaves();

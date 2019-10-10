@@ -20,7 +20,7 @@ import quickdt.data.AbstractInstance;
 
 public class ClassificationCounter implements Serializable {
 	private static final long                   serialVersionUID = -6821237234748044623L;
-	private final ValueSummingMap<Serializable> counts           = new ValueSummingMap<Serializable>();
+	private final ValueSummingMap<Serializable> counts           = new ValueSummingMap<>();
 
 	public static ClassificationCounter merge(ClassificationCounter a, ClassificationCounter b) {
 		ClassificationCounter newCC = new ClassificationCounter();
@@ -234,5 +234,4 @@ public class ClassificationCounter implements Serializable {
 			return signum == 0 ? (int) Math.signum(cc2Total - cc1Total) : signum;
 		}
 	}
-
 }

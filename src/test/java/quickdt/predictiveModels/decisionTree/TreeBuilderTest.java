@@ -12,6 +12,7 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 
 import org.apache.commons.lang.StringUtils;
@@ -380,7 +381,7 @@ public class TreeBuilderTest {
 		logBranchRecursively((Branch) node);
 	}
 
-	public int getMaxDepth(Node node) {
+	private int getMaxDepth(Node node) {
 		Leaf leaf = node.collectLeaves().stream().max((x, y) -> x.depth - y.depth).get();
 		return leaf.depth;
 	}
@@ -393,8 +394,6 @@ public class TreeBuilderTest {
 		final Tree tree = tb.buildPredictiveModel(instances);
 		final Node root = tree.node;
 
-//		TreeBuilderTestUtils.serializeDeserialize(root);
-
 		for (int depth = getMaxDepth(root); depth > 1; depth--) {
 			Assert.assertEquals(depth, getMaxDepth(root));
 			tree.pruneDeepestLeaves();
@@ -404,4 +403,17 @@ public class TreeBuilderTest {
 		}
 	}
 
+	@Test
+	public void testShowLeafMetrics() {
+		final List<Instance> instances = loadCsvDataset(1,
+				"quickdt/synthetic/basicLargerNumericWithNaN.csv.gz");
+		final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).smallTrainingSetLimit(2)
+				.maxCategoricalInSetSize(2);
+		final Tree tree = tb.buildPredictiveModel(instances);
+		final Node root = tree.node;
+
+		List<Leaf> leaves = root.collectLeaves();
+		logger.debug(leaves.stream().map(Leaf::toString).collect(Collectors.joining("\n\n")));
+
+	}
 }

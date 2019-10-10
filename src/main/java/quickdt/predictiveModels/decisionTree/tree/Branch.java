@@ -93,7 +93,7 @@ public abstract class Branch extends Node {
 	}
 
 	@Override
-	ClassificationCounter getClassificationCounter() {
+	public ClassificationCounter getClassificationCounter() {
 		return ClassificationCounter.merge(trueChild.getClassificationCounter(),
 				falseChild.getClassificationCounter());
 	}
