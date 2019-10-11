@@ -21,4 +21,20 @@ public class DownsamplingPredictiveModelTest {
         double error = Math.abs(corrected - 0.1/1.1);
         Assert.assertTrue(String.format("Error (%s) should be negligible", error), error < 0.0000001);
     }
+
+    @Test
+    public void getDropProbabilityOutputZero() {
+      final DownsamplingPredictiveModel downsamplingPredictiveModel2 = new DownsamplingPredictiveModel(null, false, false, 0.0);
+      final DownsamplingPredictiveModel downsamplingPredictiveModel1 = new DownsamplingPredictiveModel(downsamplingPredictiveModel2, false, false, 0.0);
+      final DownsamplingPredictiveModel downsamplingPredictiveModel = new DownsamplingPredictiveModel(downsamplingPredictiveModel1, false, false, 0.0);
+      Assert.assertEquals(0.0, downsamplingPredictiveModel.getDropProbability(), 0.0);
+    }
+
+    @Test
+    public void getMajorityClassificationOutputFalse() {
+      final DownsamplingPredictiveModel downsamplingPredictiveModel2 = new DownsamplingPredictiveModel(null, false, false, 0.0);
+      final DownsamplingPredictiveModel downsamplingPredictiveModel1 = new DownsamplingPredictiveModel(downsamplingPredictiveModel2, false, false, 0.0);
+      final DownsamplingPredictiveModel downsamplingPredictiveModel = new DownsamplingPredictiveModel(downsamplingPredictiveModel1, false, false, 0.0);
+      Assert.assertFalse((boolean) downsamplingPredictiveModel.getMajorityClassification());
+    }
 }
