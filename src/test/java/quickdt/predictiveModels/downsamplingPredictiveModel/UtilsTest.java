@@ -1,7 +1,12 @@
 package quickdt.predictiveModels.downsamplingPredictiveModel;
 
-/**
- * Created by ian on 4/23/14.
- */
+import org.junit.Assert;
+import org.junit.Test;
+
 public class UtilsTest {
+
+  @Test
+  public void correctProbabilityInputZeroZeroOutputZero() {
+    Assert.assertEquals(0.0, Utils.correctProbability(0.0, 0.0), 0.0);
+  }
 }
