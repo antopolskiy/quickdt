@@ -20,7 +20,7 @@ import quickdt.data.AbstractInstance;
 
 public class ClassificationCounter implements Serializable {
 	private static final long                   serialVersionUID = -6821237234748044623L;
-	private final ValueSummingMap<Serializable> counts           = new ValueSummingMap<>();
+	private final ValueSummingMap<Serializable> counts           = new ValueSummingMap<Serializable>();
 
 	public static ClassificationCounter merge(ClassificationCounter a, ClassificationCounter b) {
 		ClassificationCounter newCC = new ClassificationCounter();
@@ -47,6 +47,7 @@ public class ClassificationCounter implements Serializable {
 			} else if (acceptableMissingValue) {
 				cc = result.get(MISSING_VALUE);
 			} else {
+				// ignore missing values
 				continue;
 			}
 
@@ -91,7 +92,7 @@ public class ClassificationCounter implements Serializable {
 					.add(new AttributeValueWithClassificationCounter(key, result.get(key)));
 		}
 		Collections.sort(attributesWithClassificationCounters,
-				new MinorityProportionComparator(minorityClassification));
+				new MinorityProportionAndSizeComparator(minorityClassification));
 
 		return Pair.with(totals, attributesWithClassificationCounters);
 	}

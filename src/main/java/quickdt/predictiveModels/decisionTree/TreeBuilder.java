@@ -8,13 +8,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
 
 import org.apache.commons.lang.mutable.MutableInt;
 import org.javatuples.Pair;
+import org.testng.Assert;
 
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
@@ -41,10 +44,12 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 	public static final int          ORDINAL_TEST_SPLITS                          = 5;
 	public static final int          RESERVOIR_SIZE                               = 1000;
 	public static final Serializable MISSING_VALUE                                = "%missingVALUE%83257";
-	private static final int         HARD_MINIMUM_INSTANCES_PER_CATEGORICAL_VALUE = 10;
+	private static final int         HARD_MINIMUM_INSTANCES_PER_CATEGORICAL_VALUE = 0;
 	private final Scorer             scorer;
 	private int                      maxDepth                                     = Integer.MAX_VALUE;
 	private int                      maxCategoricalInSetSize                      = Integer.MAX_VALUE;
+	private boolean                  allowSplitsOnMissing                         = false;
+	private boolean                  forceSplitsOnMissing                         = false;
 	private int                      smallTrainingSetLimit                        = 9;
 	private double                   ignoreAttributeAtNodeProbability             = 0.0;
 	private double                   minimumScore                                 = 0.00000000000001;
@@ -65,6 +70,27 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 
 	public TreeBuilder(final Scorer scorer) {
 		this.scorer = scorer;
+	}
+
+	/**
+	 * In case of columns with null values, this controls whether is it possible to
+	 * do splits on missing values, and if a split on null values should be forced.
+	 * 
+	 * This is especially relevant for numeric columns with null values, because it
+	 * allows the first split to be on null only, and then treating the remaining
+	 * splits as proper numeric variable.
+	 * 
+	 * In case of categorical variables, if missing variables are represented by
+	 * empty strings (""), this does not impact them. If missing values are
+	 * represented by null, it does.
+	 * 
+	 * @param forseSplitsOnNull
+	 * @return
+	 */
+	public TreeBuilder allowSplitsOnNull(boolean forseSplitsOnNull) {
+		this.allowSplitsOnMissing = true;
+		this.forceSplitsOnMissing = forseSplitsOnNull;
+		return this;
 	}
 
 	public TreeBuilder maxDepth(int maxDepth) {
@@ -472,6 +498,32 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 		return attributeCharacteristics;
 	}
 
+	private List<AttributeValueWithClassificationCounter> putMissingOnTop(
+			List<AttributeValueWithClassificationCounter> valuesWithClassificationCounters) {
+		List<AttributeValueWithClassificationCounter> counterForMissingList = getClassificationCountersForMissingValues(
+				valuesWithClassificationCounters);
+		Assert.assertEquals(1, counterForMissingList.size(),
+				"There should be exactly 1 counter for missing values");
+		AttributeValueWithClassificationCounter counterForMissingValues = counterForMissingList
+				.get(0);
+		valuesWithClassificationCounters.remove(counterForMissingValues);
+		valuesWithClassificationCounters.add(0, counterForMissingValues);
+		return valuesWithClassificationCounters;
+	}
+
+	private boolean hasMissing(
+			List<AttributeValueWithClassificationCounter> valuesWithClassificationCounters) {
+		List<AttributeValueWithClassificationCounter> counterForMissing = getClassificationCountersForMissingValues(
+				valuesWithClassificationCounters);
+		return !counterForMissing.isEmpty();
+	}
+
+	private List<AttributeValueWithClassificationCounter> getClassificationCountersForMissingValues(
+			List<AttributeValueWithClassificationCounter> valuesWithClassificationCounters) {
+		return valuesWithClassificationCounters.stream()
+				.filter(a -> a.attributeValue.equals(MISSING_VALUE)).collect(Collectors.toList());
+	}
+
 	private Pair<? extends Branch, Double> createCategoricalNode(Branch parent,
 			final String attribute, final Iterable<? extends AbstractInstance> instances) {
 		if (binaryClassifications) {
@@ -487,6 +539,7 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 		double bestScore = 0;
 		final Set<Serializable> inSet = Sets.newHashSet();
 		final Set<Serializable> outSet = Sets.newHashSet();
+		int maxCategoricalInSetSizeLocal = maxCategoricalInSetSize;
 
 		// Returns (global counter (target class->#instances); sorted list of local map
 		// category value to target counters
@@ -501,28 +554,46 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 		ClassificationCounter inCounts = new ClassificationCounter();
 
 		// map of value _> classificationCounter
-		final List<AttributeValueWithClassificationCounter> valuesWithClassificationCounters = valueOutcomeCountsPairs
+		List<AttributeValueWithClassificationCounter> valuesWithClassificationCounters = valueOutcomeCountsPairs
 				.getValue1();
+
+		// force a split on missing
+		if (forceSplitsOnMissing && hasMissing(valuesWithClassificationCounters)) {
+			List<AttributeValueWithClassificationCounter> missingCounters = getClassificationCountersForMissingValues(
+					valuesWithClassificationCounters);
+			inCounts = inCounts.add(missingCounters.get(0).classificationCounter);
+			outCounts = outCounts.subtract(missingCounters.get(0).classificationCounter);
+			double insetScoreWithNull = scorer.scoreSplit(inCounts, outCounts);
+			return Pair.with(
+					new CategoricalBranch(parent, attribute, Sets.newHashSet(MISSING_VALUE)),
+					insetScoreWithNull);
+		}
+
 		Serializable lastValOfInset = valuesWithClassificationCounters.get(0).attributeValue;
 
 		int sizeOfInSet = 0;
 		int sizeOfOutSet = valuesWithClassificationCounters.size();
 		for (final AttributeValueWithClassificationCounter valueWithClassificationCounter : valuesWithClassificationCounters) {
+			final Serializable value = valueWithClassificationCounter.attributeValue;
 			final ClassificationCounter testValCounts = valueWithClassificationCounter.classificationCounter;
 			sizeOfInSet++;
 			sizeOfOutSet--;
 
-			// Also a kludge, figure out why
-			if (testValCounts == null
-					|| valueWithClassificationCounter.attributeValue.equals(MISSING_VALUE)) {
+			// skip attribute value if no counts available
+			if (testValCounts == null) {
 				continue;
 			}
-			// skips a value of a categorical variable if #occurences is below threshold
-			if (this.minCategoricalAttributeValueOccurances > 0) {
-				if (shouldWeIgnoreThisValue(testValCounts)) {
-					continue;
-				}
+
+			// skip missing values if splits on them are not allowed
+			if (value.equals(MISSING_VALUE) && !allowSplitsOnMissing) {
+				continue;
 			}
+
+			// skips a value of a categorical variable if #occurences is below threshold
+			if (isBelowMinAttributeOccurancesThreshold(testValCounts)) {
+				continue;
+			}
+
 			inCounts = inCounts.add(testValCounts);
 			outCounts = outCounts.subtract(testValCounts);
 
@@ -533,13 +604,13 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 			double thisScore = scorer.scoreSplit(inCounts, outCounts);
 
 			if (thisScore > bestScore + eps) {
-				if (sizeOfInSet <= maxCategoricalInSetSize
-						|| sizeOfOutSet <= maxCategoricalInSetSize) {
+
+				if (sizeOfInSet <= maxCategoricalInSetSizeLocal
+						|| sizeOfOutSet <= maxCategoricalInSetSizeLocal) {
 					bestScore = thisScore;
-					lastValOfInset = valueWithClassificationCounter.attributeValue;
+					lastValOfInset = value;
 				}
 			}
-
 		}
 
 		boolean insetIsBuiltNowBuildingOutset = false;
@@ -561,15 +632,13 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 		// the in-set
 		final Set<Serializable> returnSet = inSet.size() <= outSet.size() ? inSet : outSet;
 
-		Pair<CategoricalBranch, Double> bestPair = Pair
-				.with(new CategoricalBranch(parent, attribute, returnSet), bestScore);
-		return bestPair;
+		return Pair.with(new CategoricalBranch(parent, attribute, returnSet), bestScore);
 	}
 
 	private Pair<? extends Branch, Double> createNClassCategoricalNode(Branch parent,
 			final String attribute, final Iterable<? extends AbstractInstance> instances) {
 
-		final Set<Serializable> values = getAttrinbuteValues(instances, attribute);
+		final Set<Serializable> values = getAttributeValues(instances, attribute);
 
 		if (insufficientTrainingDataGivenNumberOfAttributeValues(instances, values)) {
 			return null;
@@ -582,43 +651,32 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 
 		final Pair<ClassificationCounter, Map<Serializable, ClassificationCounter>> valueOutcomeCountsPair = ClassificationCounter
 				.countAllByAttributeValues(instances, attribute, splitAttribute, id);
-		// classification counter treating all values the same
+		// global classification counter (all attribute values)
 		ClassificationCounter outSetClassificationCounts = valueOutcomeCountsPair.getValue0();
 
+		// map of attribute value _> classificationCounter
 		final Map<Serializable, ClassificationCounter> valueOutcomeCounts = valueOutcomeCountsPair
-				.getValue1(); // map of value _> classificationCounter
+				.getValue1();
 		double insetScore = 0;
+
+		// force split on missing values in case it is set by the TreeBuilder
+		ClassificationCounter missingValuesCount = valueOutcomeCounts.get(MISSING_VALUE);
+		if (forceSplitsOnMissing && missingValuesCount != null) {
+			inValueSet.add(MISSING_VALUE);
+			final ClassificationCounter testInCounts = inSetClassificationCounts
+					.add(missingValuesCount);
+			final ClassificationCounter testOutCounts = outSetClassificationCounts
+					.subtract(missingValuesCount);
+			double insetScoreWithNull = scorer.scoreSplit(testInCounts, testOutCounts);
+			return Pair.with(new CategoricalBranch(parent, attribute, inValueSet),
+					insetScoreWithNull);
+		}
+
 		while (true) {
-			com.google.common.base.Optional<ScoreValuePair> bestValueAndScore = com.google.common.base.Optional
-					.absent();
-			// values should be greater than 1
-			for (final Serializable thisValue : values) {
-				final ClassificationCounter testValCounts = valueOutcomeCounts.get(thisValue);
-				// Also a kludge, figure out why this would happen .countAllByAttributeValues
-				// has a bug...
-				// or there is an issue with negative weights
-				if (testValCounts == null || thisValue == null || thisValue.equals(MISSING_VALUE)) {
-					continue;
-				}
-				if (this.minCategoricalAttributeValueOccurances > 0) {
-					if (shouldWeIgnoreThisValue(testValCounts)) {
-						continue;
-					}
-				}
-				final ClassificationCounter testInCounts = inSetClassificationCounts
-						.add(testValCounts);
-				final ClassificationCounter testOutCounts = outSetClassificationCounts
-						.subtract(testValCounts);
 
-				double scoreWithThisValueAddedToInset = scorer.scoreSplit(testInCounts,
-						testOutCounts);
-
-				if (!bestValueAndScore.isPresent()
-						|| scoreWithThisValueAddedToInset > bestValueAndScore.get().getScore()) {
-					bestValueAndScore = com.google.common.base.Optional
-							.of(new ScoreValuePair(scoreWithThisValueAddedToInset, thisValue));
-				}
-			}
+			Optional<ScoreValuePair> bestValueAndScore = getBestScoreValuePair(
+					inSetClassificationCounts, values, outSetClassificationCounts,
+					valueOutcomeCounts);
 
 			if (inValueSet.size() < maxCategoricalInSetSize && bestValueAndScore.isPresent()
 					&& bestValueAndScore.get().getScore() > insetScore) {
@@ -636,14 +694,61 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 				break;
 			}
 		}
+
 		if (inSetClassificationCounts.getTotal() < minLeafInstances
 				|| outSetClassificationCounts.getTotal() < minLeafInstances) {
 			return null;
 		}
 
-		Pair<CategoricalBranch, Double> bestPair = Pair
-				.with(new CategoricalBranch(parent, attribute, inValueSet), insetScore);
-		return bestPair;
+		return Pair.with(new CategoricalBranch(parent, attribute, inValueSet), insetScore);
+	}
+
+	/**
+	 * Given a set of attribute {@code values} (not sorted), iterate over them, on
+	 * each iteration adding current value to the new set and calculating the score
+	 * (based on the target counts) with this value in the set. Stop iterating when
+	 * added value did not improve the score. Return the last value of the attribute
+	 * which improved the score, and the total resulting score.
+	 * 
+	 * @param inSetClassificationCounts
+	 * @param values
+	 * @param outSetClassificationCounts
+	 * @param valueOutcomeCounts
+	 * @return
+	 */
+	private Optional<ScoreValuePair> getBestScoreValuePair(
+			ClassificationCounter inSetClassificationCounts, Set<Serializable> values,
+			ClassificationCounter outSetClassificationCounts,
+			Map<Serializable, ClassificationCounter> valueOutcomeCounts) {
+
+		Optional<ScoreValuePair> bestValueAndScore = Optional.empty();
+		// values should be greater than 1
+		for (final Serializable thisValue : values) {
+			final ClassificationCounter testValCounts = valueOutcomeCounts.get(thisValue);
+			// Also a kludge, figure out why this would happen .countAllByAttributeValues
+			// has a bug...
+			// or there is an issue with negative weights
+			if (testValCounts == null || thisValue == null
+					|| (!allowSplitsOnMissing && thisValue.equals(MISSING_VALUE))) {
+				continue;
+			}
+
+			if (isBelowMinAttributeOccurancesThreshold(testValCounts)) {
+				continue;
+			}
+			final ClassificationCounter testInCounts = inSetClassificationCounts.add(testValCounts);
+			final ClassificationCounter testOutCounts = outSetClassificationCounts
+					.subtract(testValCounts);
+
+			double scoreWithThisValueAddedToInset = scorer.scoreSplit(testInCounts, testOutCounts);
+
+			if (!bestValueAndScore.isPresent()
+					|| scoreWithThisValueAddedToInset > bestValueAndScore.get().getScore()) {
+				bestValueAndScore = Optional
+						.of(new ScoreValuePair(scoreWithThisValueAddedToInset, thisValue));
+			}
+		}
+		return bestValueAndScore;
 	}
 
 	private boolean insufficientTrainingDataGivenNumberOfAttributeValues(
@@ -659,7 +764,7 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 		return false;
 	}
 
-	private Set<Serializable> getAttrinbuteValues(
+	private Set<Serializable> getAttributeValues(
 			final Iterable<? extends AbstractInstance> trainingData, final String attribute) {
 		final Set<Serializable> values = Sets.newHashSet();
 		for (final AbstractInstance instance : trainingData) {
@@ -672,7 +777,8 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 		return values;
 	}
 
-	private boolean shouldWeIgnoreThisValue(final ClassificationCounter testValCounts) {
+	private boolean isBelowMinAttributeOccurancesThreshold(
+			final ClassificationCounter testValCounts) {
 		double totalCounts = testValCounts.getTotal();
 		return totalCounts < minCategoricalAttributeValueOccurances;
 	}
