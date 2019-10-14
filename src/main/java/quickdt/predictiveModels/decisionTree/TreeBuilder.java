@@ -48,7 +48,6 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 	private final Scorer             scorer;
 	private int                      maxDepth                                     = Integer.MAX_VALUE;
 	private int                      maxCategoricalInSetSize                      = Integer.MAX_VALUE;
-	private boolean                  allowSplitsOnMissing                         = false;
 	private boolean                  forceSplitsOnMissing                         = false;
 	private int                      smallTrainingSetLimit                        = 9;
 	private double                   ignoreAttributeAtNodeProbability             = 0.0;
@@ -73,8 +72,8 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 	}
 
 	/**
-	 * In case of columns with null values, this controls whether is it possible to
-	 * do splits on missing values, and if a split on null values should be forced.
+	 * In case of columns with null values, this controls whether a split on null
+	 * values should be forced.
 	 * 
 	 * This is especially relevant for numeric columns with null values, because it
 	 * allows the first split to be on null only, and then treating the remaining
@@ -83,13 +82,11 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 	 * In case of categorical variables, if missing variables are represented by
 	 * empty strings (""), this does not impact them. If missing values are
 	 * represented by null, it does.
-	 * 
-	 * @param forseSplitsOnNull
+	 *
 	 * @return
 	 */
-	public TreeBuilder allowSplitsOnNull(boolean forseSplitsOnNull) {
-		this.allowSplitsOnMissing = true;
-		this.forceSplitsOnMissing = forseSplitsOnNull;
+	public TreeBuilder forceSplitOnNull() {
+		this.forceSplitsOnMissing = true;
 		return this;
 	}
 
@@ -584,11 +581,6 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 				continue;
 			}
 
-			// skip missing values if splits on them are not allowed
-			if (value.equals(MISSING_VALUE) && !allowSplitsOnMissing) {
-				continue;
-			}
-
 			// skips a value of a categorical variable if #occurences is below threshold
 			if (isBelowMinAttributeOccurancesThreshold(testValCounts)) {
 				continue;
@@ -725,11 +717,10 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 		// values should be greater than 1
 		for (final Serializable thisValue : values) {
 			final ClassificationCounter testValCounts = valueOutcomeCounts.get(thisValue);
-			// Also a kludge, figure out why this would happen .countAllByAttributeValues
-			// has a bug...
-			// or there is an issue with negative weights
-			if (testValCounts == null || thisValue == null
-					|| (!allowSplitsOnMissing && thisValue.equals(MISSING_VALUE))) {
+
+			// seems that original developer introduced this as a hotfix for negative
+			// weights problem, but this generally should not happen
+			if (testValCounts == null || thisValue == null) {
 				continue;
 			}
 
