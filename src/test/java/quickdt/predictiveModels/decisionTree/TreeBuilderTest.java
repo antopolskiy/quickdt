@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -240,26 +241,27 @@ public class TreeBuilderTest {
 		return result;
 	}
 
-//	@Test
-//	public void rpaTest() throws Exception {
-//		final List<Instance> instances = loadRpaDataset(1, "quickdt/synthetic/basic_mixed.csv.gz");
-//		for (int n = 1; n < 10; n++) {
-//			logger.debug("");
-//			logger.debug("== Testing for {} categories ==", n);
-//			// final TreeBuilder tb = new TreeBuilder(new SplitDiffScorer())
-//			final TreeBuilder tb = new TreeBuilder()
-//					// final TreeBuilder tb = new TreeBuilder(new GiniImpurityScorer())
-//					.minimumScore(1e-12).maxCategoricalInSetSize(n).smallTrainingSetLimit(2);
-//			final Tree tree = tb.buildPredictiveModel(instances);
-//			final Node node = tree.node;
-//
-//			TreeBuilderTestUtils.serializeDeserialize(node);
-//
-//			assertCategoricalBranchLimit((Branch) node, n + 1);
-//
-//		}
-//		// Assert.assertEquals(11, node.size());
-//	}
+	// @Test
+	// public void rpaTest() throws Exception {
+	// final List<Instance> instances = loadRpaDataset(1,
+	// "quickdt/synthetic/basic_mixed.csv.gz");
+	// for (int n = 1; n < 10; n++) {
+	// logger.debug("");
+	// logger.debug("== Testing for {} categories ==", n);
+	// // final TreeBuilder tb = new TreeBuilder(new SplitDiffScorer())
+	// final TreeBuilder tb = new TreeBuilder()
+	// // final TreeBuilder tb = new TreeBuilder(new GiniImpurityScorer())
+	// .minimumScore(1e-12).maxCategoricalInSetSize(n).smallTrainingSetLimit(2);
+	// final Tree tree = tb.buildPredictiveModel(instances);
+	// final Node node = tree.node;
+	//
+	// TreeBuilderTestUtils.serializeDeserialize(node);
+	//
+	// assertCategoricalBranchLimit((Branch) node, n + 1);
+	//
+	// }
+	// // Assert.assertEquals(11, node.size());
+	// }
 
 	private List<Instance> setNumericNullsToMean(List<Instance> instances,
 			String[] attributeNames) {
@@ -553,7 +555,7 @@ public class TreeBuilderTest {
 			final Tree tree = tb.buildPredictiveModel(instances);
 			final Node node = tree.node;
 
-//			logBranchRecursively((Branch) node);
+			// logBranchRecursively((Branch) node);
 
 			assertions.accept(node);
 		}
@@ -593,7 +595,7 @@ public class TreeBuilderTest {
 			final Tree tree = tb.buildPredictiveModel(instances);
 			final Node node = tree.node;
 
-//			logBranchRecursively((Branch) node);
+			// logBranchRecursively((Branch) node);
 
 			assertEquals(1, ((CategoricalBranch) node).inSet.size());
 			assertTrue(((CategoricalBranch) node).inSet.contains(TreeBuilder.MISSING_VALUE));
@@ -615,7 +617,7 @@ public class TreeBuilderTest {
 			final Tree tree = tb.buildPredictiveModel(instances);
 			final Node node = tree.node;
 
-//			logBranchRecursively((Branch) node);
+			// logBranchRecursively((Branch) node);
 
 			assertEquals(2, ((CategoricalBranch) node).inSet.size());
 			assertTrue(((CategoricalBranch) node).inSet.contains(0.0));
@@ -628,7 +630,7 @@ public class TreeBuilderTest {
 			final Tree tree = tb.buildPredictiveModel(instances);
 			final Node node = tree.node;
 
-//			logBranchRecursively((Branch) node);
+			// logBranchRecursively((Branch) node);
 
 			assertEquals(1, ((CategoricalBranch) node).inSet.size());
 			assertTrue(((CategoricalBranch) node).inSet.contains(TreeBuilder.MISSING_VALUE));
@@ -642,7 +644,7 @@ public class TreeBuilderTest {
 	}
 
 	@Test
-	public void testReduceDepth() throws Exception {
+	public void testReduceDepth() {
 		final List<Instance> instances = loadCsvDataset(1,
 				"quickdt/synthetic/basicCategorical.csv.gz");
 		final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).maxCategoricalInSetSize(1);
@@ -654,7 +656,6 @@ public class TreeBuilderTest {
 			tree.pruneDeepestLeaves();
 			logger.debug("");
 			logBranchRecursively((Branch) root);
-
 		}
 	}
 
@@ -669,6 +670,139 @@ public class TreeBuilderTest {
 
 		List<Leaf> leaves = root.collectLeaves();
 		logger.debug(leaves.stream().map(Leaf::toString).collect(Collectors.joining("\n\n")));
+	}
 
+	@Test
+	public void testMetricsBasicNumeric() {
+
+		List<Integer> numericColumns = Arrays.asList(0);
+		final List<Instance> instances = loadCsvDataset(1,
+				"quickdt/synthetic/basicLargerNumericWithMissing.csv.gz", numericColumns);
+		final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).smallTrainingSetLimit(2)
+				.maxCategoricalInSetSize(2);
+
+		final Tree tree = tb.buildPredictiveModel(instances);
+		final Branch root = (Branch) tree.node;
+
+		logBranchRecursively(root);
+
+		Map<Serializable, Double> recall = tree.getRecall();
+//		System.out.println(recall);
+		assertTrue(recall.get("0") - 1 < 0.001);
+		assertTrue(recall.get("1") - 1 < 0.001);
+
+		Map<Serializable, Double> precision = tree.getPrecision();
+//		System.out.println(precision);
+		assertTrue(precision.get("0") - 1 < 0.001);
+		assertTrue(precision.get("1") - 1 < 0.001);
+
+	}
+
+	@Test
+	public void testMetricsMixedCategorical() {
+
+		final List<Instance> instances = loadCsvDataset(1,
+				"quickdt/synthetic/categoricalMixed.csv.gz");
+		final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).smallTrainingSetLimit(2)
+				.maxCategoricalInSetSize(2);
+
+		final Tree tree = tb.buildPredictiveModel(instances);
+		final Branch root = (Branch) tree.node;
+
+//		logBranchRecursively(root);
+
+		Map<Serializable, Double> recall = tree.getRecall();
+		assertTrue(recall.get("0") - 0.833 < 0.001);
+		assertTrue(recall.get("1") - 0.833 < 0.001);
+
+		Map<Serializable, Double> precision = tree.getPrecision();
+		assertTrue(precision.get("0") - 0.833 < 0.001);
+		assertTrue(precision.get("1") - 0.833 < 0.001);
+
+	}
+
+	@Test
+	public void testMetricsMixedCategorical2() {
+
+		final List<Instance> instances = loadCsvDataset(1,
+				"quickdt/synthetic/categoricalMixed2.csv.gz");
+		final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).smallTrainingSetLimit(2)
+				.maxCategoricalInSetSize(2);
+
+		final Tree tree = tb.buildPredictiveModel(instances);
+		final Branch root = (Branch) tree.node;
+
+//		logBranchRecursively(root);
+
+		Map<Serializable, Double> recall = tree.getRecall();
+		assertTrue(recall.get("0") - 0.777 < 0.001);
+		assertTrue(recall.get("1") - 0.833 < 0.001);
+
+		Map<Serializable, Double> precision = tree.getPrecision();
+		assertTrue(precision.get("0") - 0.875 < 0.001);
+		assertTrue(precision.get("1") - 0.714 < 0.001);
+	}
+
+	@Test
+	public void testMetricsMulticlassCategorical() {
+
+		final List<Instance> instances = loadCsvDataset(1,
+				"quickdt/synthetic/categoricalMulticlassMixed.csv.gz");
+		final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).smallTrainingSetLimit(2)
+				.maxCategoricalInSetSize(2);
+
+		final Tree tree = tb.buildPredictiveModel(instances);
+		final Branch root = (Branch) tree.node;
+
+//		logBranchRecursively(root);
+
+//		for (Leaf leaf : tree.getLeaves()) {
+//			System.out.println(leaf);
+//			System.out.println(leaf.getMajorityClass());
+//		}
+
+		Map<Serializable, Double> recall = tree.getRecall();
+//		System.out.println(recall);
+		assertTrue(recall.get("0") - 0.777 < 0.001);
+		assertTrue(recall.get("1") - 0.833 < 0.001);
+		assertTrue(recall.get("2") - 0.571 < 0.001);
+
+		Map<Serializable, Double> precision = tree.getPrecision();
+//		System.out.println(precision);
+		assertTrue(precision.get("0") - 0.777 < 0.001);
+		assertTrue(precision.get("1") - 0.555 < 0.001);
+		assertTrue(precision.get("2") - 1 < 0.001);
+	}
+
+	@Test
+	public void testMetricsMulticlassNumeric() {
+		List<Integer> numericColumns = Arrays.asList(0);
+
+		final List<Instance> instances = loadCsvDataset(1,
+				"quickdt/synthetic/numericMulticlassMixed.csv.gz", numericColumns);
+		final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).smallTrainingSetLimit(2)
+				.maxCategoricalInSetSize(2);
+
+		final Tree tree = tb.buildPredictiveModel(instances);
+
+//		final Branch root = (Branch) tree.node;
+//		logBranchRecursively(root);
+//
+//		for (Leaf leaf : tree.getLeaves()) {
+//			System.out.println(leaf);
+//			System.out.println(leaf.getMajorityClass());
+//		}
+
+		Map<Serializable, Double> recall = tree.getRecall();
+		System.out.println(recall);
+		assertTrue(recall.get("0") - 1 < 0.001);
+		assertTrue(recall.get("1") - 0.571 < 0.001);
+		assertTrue(recall.get("2") - 0.9 < 0.001);
+
+		Map<Serializable, Double> precision = tree.getPrecision();
+		System.out.println(precision);
+		assertTrue(precision.get("0") - 0.7 < 0.001);
+		assertTrue(precision.get("1") - 0.8 < 0.001);
+		assertTrue(precision.get("2") - 1 < 0.001);
 	}
 }

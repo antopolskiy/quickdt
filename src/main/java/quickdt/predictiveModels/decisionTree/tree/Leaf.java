@@ -5,6 +5,7 @@ import java.io.Serializable;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -123,8 +124,14 @@ public class Leaf extends Node {
 	@Override
 	public String toString() {
 		StringBuilder builder = new StringBuilder();
-		for (Node n = parent; n != null; n = n.parent) {
-			builder.append(n + "->");
+		Node currentNode = this;
+		for (Branch n = parent; n != null; n = n.parent) {
+			if (currentNode.equals(n.trueChild)) {
+				builder.append(n.toString() + "->");
+			} else {
+				builder.append(n.toNotString() + "->");
+			}
+			currentNode = n;
 		}
 		builder.append("\n");
 		for (Serializable key : getClassifications()) {
@@ -137,10 +144,10 @@ public class Leaf extends Node {
 		return builder.toString();
 	}
 
-	private Serializable getMajorityClass() {
-		Map.Entry<Serializable, Double> max = classificationCounts.getCounts().entrySet().stream()
-				.max((x, y) -> (int) (y.getValue() - x.getValue())).get();
-		return max.getKey();
+	public Serializable getMajorityClass() {
+		Optional<Map.Entry<Serializable, Double>> max = classificationCounts.getCounts().entrySet()
+				.stream().max((x, y) -> (int) Math.signum(x.getValue() - y.getValue()));
+		return max.map(Map.Entry::getKey).orElse(null);
 	}
 
 	public double getCountForClass(Serializable classification) {

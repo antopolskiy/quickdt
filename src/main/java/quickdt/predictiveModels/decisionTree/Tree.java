@@ -2,7 +2,12 @@ package quickdt.predictiveModels.decisionTree;
 
 import java.io.PrintStream;
 import java.io.Serializable;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import com.google.common.collect.Maps;
 
@@ -72,12 +77,52 @@ public class Tree implements PredictiveModel {
 		}
 
 		final Tree tree = (Tree) o;
+		return node.equals(tree.node);
+	}
 
-		if (!node.equals(tree.node)) {
-			return false;
+	public List<Leaf> getLeavesWithMajorityIn(Serializable target) {
+		return getLeaves().stream().filter(leaf -> leaf.getMajorityClass().equals(target))
+				.collect(Collectors.toList());
+	}
+
+	public List<Leaf> getLeaves() {
+		return node.collectLeaves();
+	}
+
+	public Map<Serializable, Double> getRecall() {
+		Map<Serializable, Double> metric = new HashMap<>();
+
+		Set<Serializable> targets = getTargets();
+		for (Serializable target : targets) {
+			List<Leaf> targetLeaves = getLeavesWithMajorityIn(target);
+			double truePositives = targetLeaves.stream().map(Leaf::getTruePositives)
+					.mapToDouble(Double::doubleValue).sum();
+			double falseNegatives = getLeaves().stream().filter(o -> !targetLeaves.contains(o))
+					.map(leaf -> leaf.getCountForClass(target)).mapToDouble(Double::doubleValue)
+					.sum();
+			metric.put(target, truePositives / (truePositives + falseNegatives));
 		}
+		return metric;
+	}
 
-		return true;
+	public Map<Serializable, Double> getPrecision() {
+		Map<Serializable, Double> metric = new HashMap<>();
+
+		Set<Serializable> targets = getTargets();
+		for (Serializable target : targets) {
+			List<Leaf> targetLeaves = getLeavesWithMajorityIn(target);
+			double truePositives = targetLeaves.stream().map(Leaf::getTruePositives)
+					.mapToDouble(Double::doubleValue).sum();
+			double falsePositives = targetLeaves.stream().map(Leaf::getFalsePositives)
+					.mapToDouble(Double::doubleValue).sum();
+			metric.put(target, truePositives / (truePositives + falsePositives));
+		}
+		return metric;
+	}
+
+	private Set<Serializable> getTargets() {
+		return getLeaves().stream().map(l -> l.classificationCounts.getCounts().keySet())
+				.flatMap(Collection::stream).collect(Collectors.toSet());
 	}
 
 	@Override
