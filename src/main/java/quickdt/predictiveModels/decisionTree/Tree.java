@@ -2,10 +2,11 @@ package quickdt.predictiveModels.decisionTree;
 
 import java.io.PrintStream;
 import java.io.Serializable;
-import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -90,8 +91,12 @@ public class Tree implements PredictiveModel {
 	}
 
 	private Set<Serializable> getTargets() {
-		return getLeaves().stream().map(l -> l.classificationCounts.getCounts().keySet())
-				.flatMap(Collection::stream).collect(Collectors.toSet());
+		return classificationCounter.allClassifications();
+	}
+
+	public int getMaxDepth() {
+		Optional<Leaf> leaf = getLeaves().stream().max(Comparator.comparingInt(x -> x.depth));
+		return leaf.map(value -> value.depth).orElse(0);
 	}
 
 	public Map<Serializable, Double> getRecall() {

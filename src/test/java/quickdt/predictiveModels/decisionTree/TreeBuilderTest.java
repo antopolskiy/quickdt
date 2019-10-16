@@ -754,7 +754,7 @@ public class TreeBuilderTest {
 		final Tree tree = tb.buildPredictiveModel(instances);
 		final Branch root = (Branch) tree.node;
 
-//		logBranchRecursively(root);
+		logBranchRecursively(root);
 
 //		for (Leaf leaf : tree.getLeaves()) {
 //			System.out.println(leaf);
