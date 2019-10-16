@@ -89,40 +89,85 @@ public class Tree implements PredictiveModel {
 		return node.collectLeaves();
 	}
 
+	private Set<Serializable> getTargets() {
+		return getLeaves().stream().map(l -> l.classificationCounts.getCounts().keySet())
+				.flatMap(Collection::stream).collect(Collectors.toSet());
+	}
+
 	public Map<Serializable, Double> getRecall() {
 		Map<Serializable, Double> metric = new HashMap<>();
+		Map<Serializable, Double> truePositiveCounts = getTruePositiveCounts();
+		Map<Serializable, Double> falseNegativesCounts = getFalseNegativesCounts();
 
 		Set<Serializable> targets = getTargets();
 		for (Serializable target : targets) {
-			List<Leaf> targetLeaves = getLeavesWithMajorityIn(target);
-			double truePositives = targetLeaves.stream().map(Leaf::getTruePositives)
-					.mapToDouble(Double::doubleValue).sum();
-			double falseNegatives = getLeaves().stream().filter(o -> !targetLeaves.contains(o))
-					.map(leaf -> leaf.getCountForClass(target)).mapToDouble(Double::doubleValue)
-					.sum();
-			metric.put(target, truePositives / (truePositives + falseNegatives));
+			Double truePositives = truePositiveCounts.get(target);
+			if (truePositives == null) {
+				metric.put(target, 0.0);
+			} else {
+				Double falseNegatives = falseNegativesCounts.getOrDefault(target, 0.0);
+				metric.put(target, truePositives / (truePositives + falseNegatives));
+			}
 		}
 		return metric;
 	}
 
 	public Map<Serializable, Double> getPrecision() {
 		Map<Serializable, Double> metric = new HashMap<>();
+		Map<Serializable, Double> truePositiveCounts = getTruePositiveCounts();
+		Map<Serializable, Double> falsePositiveCounts = getFalsePositiveCounts();
+
+		Set<Serializable> targets = getTargets();
+		for (Serializable target : targets) {
+			Double truePositives = truePositiveCounts.get(target);
+			if (truePositives == null) {
+				metric.put(target, 0.0);
+			} else {
+				Double falsePositives = falsePositiveCounts.getOrDefault(target, 0.0);
+				metric.put(target, truePositives / (truePositives + falsePositives));
+			}
+		}
+		return metric;
+	}
+
+	public Map<Serializable, Double> getTruePositiveCounts() {
+		Map<Serializable, Double> counts = new HashMap<>();
 
 		Set<Serializable> targets = getTargets();
 		for (Serializable target : targets) {
 			List<Leaf> targetLeaves = getLeavesWithMajorityIn(target);
 			double truePositives = targetLeaves.stream().map(Leaf::getTruePositives)
 					.mapToDouble(Double::doubleValue).sum();
-			double falsePositives = targetLeaves.stream().map(Leaf::getFalsePositives)
-					.mapToDouble(Double::doubleValue).sum();
-			metric.put(target, truePositives / (truePositives + falsePositives));
+			counts.put(target, truePositives);
 		}
-		return metric;
+		return counts;
 	}
 
-	private Set<Serializable> getTargets() {
-		return getLeaves().stream().map(l -> l.classificationCounts.getCounts().keySet())
-				.flatMap(Collection::stream).collect(Collectors.toSet());
+	public Map<Serializable, Double> getFalsePositiveCounts() {
+		Map<Serializable, Double> counts = new HashMap<>();
+
+		Set<Serializable> targets = getTargets();
+		for (Serializable target : targets) {
+			List<Leaf> targetLeaves = getLeavesWithMajorityIn(target);
+			double falsePositives = targetLeaves.stream().map(Leaf::getFalsePositives)
+					.mapToDouble(Double::doubleValue).sum();
+			counts.put(target, falsePositives);
+		}
+		return counts;
+	}
+
+	public Map<Serializable, Double> getFalseNegativesCounts() {
+		Map<Serializable, Double> counts = new HashMap<>();
+
+		Set<Serializable> targets = getTargets();
+		for (Serializable target : targets) {
+			List<Leaf> targetLeaves = getLeavesWithMajorityIn(target);
+			double falseNegatives = getLeaves().stream().filter(o -> !targetLeaves.contains(o))
+					.map(leaf -> leaf.getCountForClass(target)).mapToDouble(Double::doubleValue)
+					.sum();
+			counts.put(target, falseNegatives);
+		}
+		return counts;
 	}
 
 	@Override
