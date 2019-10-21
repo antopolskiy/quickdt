@@ -1,4 +1,4 @@
-package quickdt.predictiveModels.decisionTree;
+package quickdt.predictiveModels.decisionTree.tree;
 
 import java.io.PrintStream;
 import java.io.Serializable;
@@ -14,9 +14,6 @@ import com.google.common.collect.Maps;
 
 import quickdt.data.Attributes;
 import quickdt.predictiveModels.PredictiveModel;
-import quickdt.predictiveModels.decisionTree.tree.ClassificationCounter;
-import quickdt.predictiveModels.decisionTree.tree.Leaf;
-import quickdt.predictiveModels.decisionTree.tree.Node;
 
 /**
  * Created with IntelliJ IDEA. User: janie Date: 6/26/13 Time: 3:15 PM To change
@@ -28,7 +25,7 @@ public class Tree implements PredictiveModel {
 	public final Node             node;
 	private ClassificationCounter classificationCounter;
 
-	protected Tree(Node tree) {
+	public Tree(Node tree) {
 		this.node = tree;
 		classificationCounter = node.getClassificationCounter();
 	}
@@ -43,8 +40,15 @@ public class Tree implements PredictiveModel {
 		return classificationCounter;
 	}
 
-	public void pruneDeepestLeaves() {
-		node.pruneDeepestLeaves();
+	/**
+	 * @param prune after collapsing deepest leaves, prune leaves with the same
+	 *              majority category.
+	 */
+	public void collapseDeepestLeaves(boolean prune) {
+		node.collapseDeepestLeaves();
+		if (prune) {
+			pruneSameCategoryLeaves();
+		}
 	}
 
 	@Override
@@ -82,7 +86,7 @@ public class Tree implements PredictiveModel {
 	}
 
 	public List<Leaf> getLeavesWithMajorityIn(Serializable target) {
-		return getLeaves().stream().filter(leaf -> leaf.getMajorityClass().equals(target))
+		return getLeaves().stream().filter(leaf -> leaf.getBestClassification().equals(target))
 				.collect(Collectors.toList());
 	}
 
@@ -173,6 +177,24 @@ public class Tree implements PredictiveModel {
 			counts.put(target, falseNegatives);
 		}
 		return counts;
+	}
+
+	public void pruneSameCategoryLeaves() {
+		boolean notFinished = true;
+		while (notFinished) {
+			notFinished = false;
+			List<Leaf> leaves = getLeaves();
+			for (Leaf leaf : leaves) {
+				if (leaf.getSibling() instanceof Leaf) {
+					if (leaf.getBestClassification()
+							.equals(((Leaf) leaf.getSibling()).getBestClassification())) {
+						leaf.pruneMe();
+						notFinished = true;
+						break;
+					}
+				}
+			}
+		}
 	}
 
 	@Override

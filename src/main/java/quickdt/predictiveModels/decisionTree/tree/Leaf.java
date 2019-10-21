@@ -5,9 +5,10 @@ import java.io.Serializable;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
+
+import org.apache.commons.lang.NotImplementedException;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Iterables;
@@ -137,17 +138,10 @@ public class Leaf extends Node {
 		for (Serializable key : getClassifications()) {
 			builder.append(key + "=" + this.getProbability(key) + " ");
 			builder.append("(matches=" + this.getTruePositives() + "; ");
-//			builder.append("exceptions=" +  + "; ");
 			builder.append("contaminations=" + this.getFalsePositives() + ")");
 			builder.append("\n");
 		}
 		return builder.toString();
-	}
-
-	public Serializable getMajorityClass() {
-		Optional<Map.Entry<Serializable, Double>> max = classificationCounts.getCounts().entrySet()
-				.stream().max((x, y) -> (int) Math.signum(x.getValue() - y.getValue()));
-		return max.map(Map.Entry::getKey).orElse(null);
 	}
 
 	public double getCountForClass(Serializable classification) {
@@ -155,11 +149,11 @@ public class Leaf extends Node {
 	}
 
 	public double getTruePositives() {
-		return classificationCounts.getCount(getMajorityClass());
+		return classificationCounts.getCount(getBestClassification());
 	}
 
 	public double getFalseNegatives(ClassificationCounter treeClassificationCounter) {
-		return treeClassificationCounter.getCount(getMajorityClass()) - getTruePositives();
+		return treeClassificationCounter.getCount(getBestClassification()) - getTruePositives();
 	}
 
 	public double getFalsePositives() {
@@ -213,5 +207,37 @@ public class Leaf extends Node {
 		result = 31 * result + (int) (temp ^ (temp >>> 32));
 		result = 31 * result + classificationCounts.hashCode();
 		return result;
+	}
+
+	Node getSibling() {
+		if (isTrueChild()) {
+			return parent.falseChild;
+		} else if (isFalseChild()) {
+			return parent.trueChild;
+		} else if (isRoot()) {
+			return null;
+		} else {
+			throw new NotImplementedException();
+		}
+	}
+
+	private boolean isFalseChild() {
+		if (!isRoot()) {
+			return this == parent.falseChild;
+		} else {
+			return false;
+		}
+	}
+
+	private boolean isTrueChild() {
+		if (!isRoot()) {
+			return this == parent.trueChild;
+		} else {
+			return false;
+		}
+	}
+
+	void pruneMe() {
+		parent.collapse(depth - 1);
 	}
 }

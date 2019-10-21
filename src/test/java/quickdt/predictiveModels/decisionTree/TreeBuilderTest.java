@@ -39,6 +39,7 @@ import quickdt.predictiveModels.decisionTree.tree.CategoricalBranch;
 import quickdt.predictiveModels.decisionTree.tree.Leaf;
 import quickdt.predictiveModels.decisionTree.tree.Node;
 import quickdt.predictiveModels.decisionTree.tree.NumericBranch;
+import quickdt.predictiveModels.decisionTree.tree.Tree;
 
 public class TreeBuilderTest {
 	protected final Logger logger = LoggerFactory.getLogger(getClass());
@@ -653,7 +654,7 @@ public class TreeBuilderTest {
 
 		for (int depth = getMaxDepth(root); depth > 1; depth--) {
 			Assert.assertEquals(depth, getMaxDepth(root));
-			tree.pruneDeepestLeaves();
+			tree.collapseDeepestLeaves(false);
 			logger.debug("");
 			logBranchRecursively((Branch) root);
 		}
@@ -805,4 +806,85 @@ public class TreeBuilderTest {
 		assertTrue(precision.get("1") - 0.8 < 0.001);
 		assertTrue(precision.get("2") - 1 < 0.001);
 	}
+
+	@Test
+	public void testCategoricalMulticlassBinaryPruning() {
+
+		final List<Instance> instances = loadCsvDataset(1,
+				"quickdt/synthetic/categoricalMulticlassMixed.csv.gz");
+		final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).smallTrainingSetLimit(2)
+				.maxCategoricalInSetSize(2);
+
+		final Tree tree = tb.buildPredictiveModel(instances);
+
+		logBranchRecursively((Branch) tree.node);
+
+		assertEquals(8, tree.getLeaves().size());
+
+		tree.pruneSameCategoryLeaves();
+
+		assertEquals(5, tree.getLeaves().size());
+
+		// assertTrue(node instanceof CategoricalBranch);
+//		CategoricalBranch branch = (CategoricalBranch) node;
+//		assertEquals(1, branch.inSet.size());
+//		assertTrue(branch.inSet.contains("A"));
+	}
+
+	@Test
+	public void testCategoricalMulticlassBinaryPruningNoSplit() {
+
+		final List<Instance> instances = loadCsvDataset(1,
+				"quickdt/synthetic/categoricalMulticlassMixed.csv.gz");
+		final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).smallTrainingSetLimit(2)
+				.maxCategoricalInSetSize(2).maxDepth(0);
+		final Tree tree = tb.buildPredictiveModel(instances);
+		assertEquals(1, tree.getLeaves().size());
+		tree.pruneSameCategoryLeaves();
+		assertEquals(1, tree.getLeaves().size());
+
+//		logBranchRecursively((Branch) tree.node);
+
+//		assertEquals(5, tree.getLeaves().size());
+
+		// assertTrue(node instanceof CategoricalBranch);
+		// CategoricalBranch branch = (CategoricalBranch) node;
+		// assertEquals(1, branch.inSet.size());
+		// assertTrue(branch.inSet.contains("A"));
+	}
+
+	@Test
+	public void testCategoricalMulticlassBinaryPruningLowDepth() {
+
+		final List<Instance> instances = loadCsvDataset(1,
+				"quickdt/synthetic/categoricalMulticlassMixed.csv.gz");
+		final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).smallTrainingSetLimit(2)
+				.maxCategoricalInSetSize(2).maxDepth(1);
+		final Tree tree = tb.buildPredictiveModel(instances);
+
+		assertEquals(2, tree.getLeaves().size());
+		tree.pruneSameCategoryLeaves();
+
+		assertEquals(2, tree.getLeaves().size());
+	}
+
+	@Test
+	public void testSameCategoryPruningBuilder() {
+
+		final List<Instance> instances = loadCsvDataset(1,
+				"quickdt/synthetic/categoricalMulticlassMixed.csv.gz");
+		{
+			final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).smallTrainingSetLimit(2)
+					.maxCategoricalInSetSize(2);
+			final Tree tree = tb.buildPredictiveModel(instances);
+			assertEquals(8, tree.getLeaves().size());
+		}
+		{
+			final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).smallTrainingSetLimit(2)
+					.maxCategoricalInSetSize(2).pruneSameCategory();
+			final Tree tree = tb.buildPredictiveModel(instances);
+			assertEquals(5, tree.getLeaves().size());
+		}
+	}
+
 }

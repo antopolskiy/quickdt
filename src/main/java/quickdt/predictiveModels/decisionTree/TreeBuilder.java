@@ -37,6 +37,7 @@ import quickdt.predictiveModels.decisionTree.tree.ClassificationCounter;
 import quickdt.predictiveModels.decisionTree.tree.Leaf;
 import quickdt.predictiveModels.decisionTree.tree.Node;
 import quickdt.predictiveModels.decisionTree.tree.NumericBranch;
+import quickdt.predictiveModels.decisionTree.tree.Tree;
 import quickdt.predictiveModels.decisionTree.tree.UpdatableLeaf;
 
 public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> {
@@ -55,6 +56,7 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 	private int                      minLeafInstances                             = 0;
 	private boolean                  updatable                                    = false;
 	private boolean                  binaryClassifications                        = true;
+	private boolean                  pruneSameCategory                            = false;
 	private Serializable             minorityClassification;
 	private String                   splitAttribute                               = null;
 	private Set<String>              splitModelWhiteList;
@@ -136,6 +138,16 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 		return this;
 	}
 
+	/**
+	 * After training the model, prune the leaves with the same majority category.
+	 * 
+	 * @return
+	 */
+	public TreeBuilder pruneSameCategory() {
+		this.pruneSameCategory = true;
+		return this;
+	}
+
 	@Override
 	public TreeBuilder updatable(boolean updatable) {
 		this.updatable = updatable;
@@ -150,7 +162,11 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 	@Override
 	public Tree buildPredictiveModel(final Iterable<? extends AbstractInstance> trainingData) {
 		setBinaryClassificationProperties(trainingData);
-		return new Tree(buildTree(null, trainingData, 0, createNumericSplits(trainingData)));
+		Tree tree = new Tree(buildTree(null, trainingData, 0, createNumericSplits(trainingData)));
+		if (pruneSameCategory) {
+			tree.pruneSameCategoryLeaves();
+		}
+		return tree;
 	}
 
 	@Override

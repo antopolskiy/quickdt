@@ -6,7 +6,7 @@ import org.testng.annotations.Test;
 import quickdt.data.Instance;
 import quickdt.predictiveModels.PredictiveModelWithDataBuilder;
 import quickdt.predictiveModels.TreeBuilderTestUtils;
-import quickdt.predictiveModels.decisionTree.Tree;
+import quickdt.predictiveModels.decisionTree.tree.Tree;
 import quickdt.predictiveModels.decisionTree.TreeBuilder;
 import quickdt.predictiveModels.decisionTree.scorers.SplitDiffScorer;
 import quickdt.predictiveModels.randomForest.RandomForest;
