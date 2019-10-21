@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>quickdt</groupId>
     <artifactId>quickdt</artifactId>
-    <version>0.2.2.2-SNAPSHOT</version>
+    <version>0.2.2.2</version>
     <packaging>jar</packaging>
     <distributionManagement>
         <repository>
@@ -31,9 +31,9 @@
             <version>2.2.0</version>
         </dependency>
         <dependency>
-        	<groupId>com.amazonaws</groupId>
-        	<artifactId>aws-java-sdk</artifactId>
-        	<version>1.11.592</version>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk</artifactId>
+            <version>1.11.592</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
@@ -108,12 +108,6 @@
             <version>1.1.1</version>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>org.testng</groupId>
-            <artifactId>testng</artifactId>
-            <version>6.8.7</version>
-            <scope>compile</scope>
-        </dependency>
 
     </dependencies>
 
@@ -157,18 +151,18 @@
                     </execution>
                 </executions>
             </plugin>
-<!--            <plugin>-->
-<!--                <groupId>org.apache.maven.plugins</groupId>-->
-<!--                <artifactId>maven-javadoc-plugin</artifactId>-->
-<!--                <executions>-->
-<!--                    <execution>-->
-<!--                        <id>attach-javadocs</id>-->
-<!--                        <goals>-->
-<!--                            <goal>jar</goal>-->
-<!--                        </goals>-->
-<!--                    </execution>-->
-<!--                </executions>-->
-<!--            </plugin>-->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 </project>

@@ -17,7 +17,6 @@ import javax.annotation.Nullable;
 
 import org.apache.commons.lang.mutable.MutableInt;
 import org.javatuples.Pair;
-import org.testng.Assert;
 
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
@@ -203,8 +202,7 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 
 	private double[] createNumericSplit(final Iterable<? extends AbstractInstance> trainingData,
 			final String attribute) {
-		final ReservoirSampler<Double> reservoirSampler = new ReservoirSampler<Double>(
-				RESERVOIR_SIZE);
+		final ReservoirSampler<Double> reservoirSampler = new ReservoirSampler<>(RESERVOIR_SIZE);
 		for (final AbstractInstance instance : trainingData) {
 			Serializable value = instance.getAttributes().get(attribute);
 			if (value == null) {
@@ -225,7 +223,7 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 				if (attributeEntry.getValue() instanceof Number) {
 					ReservoirSampler<Double> reservoirSampler = rsm.get(attributeEntry.getKey());
 					if (reservoirSampler == null) {
-						reservoirSampler = new ReservoirSampler<Double>(RESERVOIR_SIZE);
+						reservoirSampler = new ReservoirSampler<>(RESERVOIR_SIZE);
 						rsm.put(attributeEntry.getKey(), reservoirSampler);
 					}
 					reservoirSampler.sample(((Number) attributeEntry.getValue()).doubleValue());
@@ -499,8 +497,6 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 			List<AttributeValueWithClassificationCounter> valuesWithClassificationCounters) {
 		List<AttributeValueWithClassificationCounter> counterForMissingList = getClassificationCountersForMissingValues(
 				valuesWithClassificationCounters);
-		Assert.assertEquals(1, counterForMissingList.size(),
-				"There should be exactly 1 counter for missing values");
 		AttributeValueWithClassificationCounter counterForMissingValues = counterForMissingList
 				.get(0);
 		valuesWithClassificationCounters.remove(counterForMissingValues);
