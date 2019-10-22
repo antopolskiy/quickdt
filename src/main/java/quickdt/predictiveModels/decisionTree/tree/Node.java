@@ -98,7 +98,9 @@ public abstract class Node implements Serializable {
 		}
 		leaves = new ArrayList<>(leaves.size());
 		for (Leaf leaf : maxDepthLeaves) {
-			leaves.add(leaf.parent.collapse(depth - 1));
+			if (!leaf.isRoot()) {
+				leaves.add(leaf.parent.collapse(depth - 1));
+			}
 		}
 		return leaves;
 	}

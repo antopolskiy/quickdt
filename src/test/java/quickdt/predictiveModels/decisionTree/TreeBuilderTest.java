@@ -784,7 +784,7 @@ public class TreeBuilderTest {
 		final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).smallTrainingSetLimit(2)
 				.maxCategoricalInSetSize(2);
 
-		final Tree tree = tb.buildPredictiveModel(instances);
+		Tree tree = tb.buildPredictiveModel(instances);
 
 //		final Branch root = (Branch) tree.node;
 //		logBranchRecursively(root);
@@ -815,13 +815,13 @@ public class TreeBuilderTest {
 		final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).smallTrainingSetLimit(2)
 				.maxCategoricalInSetSize(2);
 
-		final Tree tree = tb.buildPredictiveModel(instances);
+		Tree tree = tb.buildPredictiveModel(instances);
 
 		logBranchRecursively((Branch) tree.node);
 
 		assertEquals(8, tree.getLeaves().size());
 
-		tree.pruneSameCategoryLeaves();
+		tree = tree.pruneSameCategoryLeaves();
 
 		assertEquals(5, tree.getLeaves().size());
 
@@ -838,10 +838,11 @@ public class TreeBuilderTest {
 				"quickdt/synthetic/categoricalMulticlassMixed.csv.gz");
 		final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).smallTrainingSetLimit(2)
 				.maxCategoricalInSetSize(2).maxDepth(0);
-		final Tree tree = tb.buildPredictiveModel(instances);
+		Tree tree = tb.buildPredictiveModel(instances);
 		assertEquals(1, tree.getLeaves().size());
-		tree.pruneSameCategoryLeaves();
+		tree = tree.pruneSameCategoryLeaves();
 		assertEquals(1, tree.getLeaves().size());
+		tree.collapseDeepestLeaves(true);
 
 //		logBranchRecursively((Branch) tree.node);
 
@@ -860,10 +861,11 @@ public class TreeBuilderTest {
 				"quickdt/synthetic/categoricalMulticlassMixed.csv.gz");
 		final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).smallTrainingSetLimit(2)
 				.maxCategoricalInSetSize(2).maxDepth(1);
-		final Tree tree = tb.buildPredictiveModel(instances);
+
+		Tree tree = tb.buildPredictiveModel(instances);
 
 		assertEquals(2, tree.getLeaves().size());
-		tree.pruneSameCategoryLeaves();
+		tree = tree.pruneSameCategoryLeaves();
 
 		assertEquals(2, tree.getLeaves().size());
 	}
@@ -876,13 +878,13 @@ public class TreeBuilderTest {
 		{
 			final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).smallTrainingSetLimit(2)
 					.maxCategoricalInSetSize(2);
-			final Tree tree = tb.buildPredictiveModel(instances);
+			Tree tree = tb.buildPredictiveModel(instances);
 			assertEquals(8, tree.getLeaves().size());
 		}
 		{
 			final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).smallTrainingSetLimit(2)
 					.maxCategoricalInSetSize(2).pruneSameCategory();
-			final Tree tree = tb.buildPredictiveModel(instances);
+			Tree tree = tb.buildPredictiveModel(instances);
 			assertEquals(5, tree.getLeaves().size());
 		}
 	}
