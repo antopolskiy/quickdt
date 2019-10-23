@@ -44,11 +44,13 @@ public class Tree implements PredictiveModel {
 	 * @param prune after collapsing deepest leaves, prune leaves with the same
 	 *              majority category.
 	 */
-	public void collapseDeepestLeaves(boolean prune) {
+	public Tree collapseDeepestLeaves(boolean prune) {
 		node.collapseDeepestLeaves();
+		Tree tree = new Tree(node);
 		if (prune) {
-			pruneSameCategoryLeaves();
+			tree = tree.pruneSameCategoryLeaves();
 		}
+		return tree;
 	}
 
 	@Override
@@ -179,7 +181,7 @@ public class Tree implements PredictiveModel {
 		return counts;
 	}
 
-	public void pruneSameCategoryLeaves() {
+	public Tree pruneSameCategoryLeaves() {
 		boolean notFinished = true;
 		while (notFinished) {
 			notFinished = false;
@@ -188,13 +190,17 @@ public class Tree implements PredictiveModel {
 				if (leaf.getSibling() instanceof Leaf) {
 					if (leaf.getBestClassification()
 							.equals(((Leaf) leaf.getSibling()).getBestClassification())) {
-						leaf.pruneMe();
+						Leaf collapsedLeaf = leaf.pruneMe();
+						if (collapsedLeaf.isRoot()) {
+							return new Tree(collapsedLeaf);
+						}
 						notFinished = true;
 						break;
 					}
 				}
 			}
 		}
+		return this;
 	}
 
 	@Override

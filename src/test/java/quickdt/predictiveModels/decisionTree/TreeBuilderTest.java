@@ -861,7 +861,8 @@ public class TreeBuilderTest {
 				"quickdt/synthetic/categoricalMulticlassMixed.csv.gz");
 		final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).smallTrainingSetLimit(2)
 				.maxCategoricalInSetSize(2).maxDepth(1);
-		final Tree tree = tb.buildPredictiveModel(instances);
+
+		Tree tree = tb.buildPredictiveModel(instances);
 
 		assertEquals(2, tree.getLeaves().size());
 		tree = tree.pruneSameCategoryLeaves();
@@ -877,7 +878,7 @@ public class TreeBuilderTest {
 		{
 			final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).smallTrainingSetLimit(2)
 					.maxCategoricalInSetSize(2);
-			final Tree tree = tb.buildPredictiveModel(instances);
+			Tree tree = tb.buildPredictiveModel(instances);
 			assertEquals(8, tree.getLeaves().size());
 		}
 		{
