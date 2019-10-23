@@ -41,28 +41,29 @@ import quickdt.predictiveModels.decisionTree.tree.Tree;
 import quickdt.predictiveModels.decisionTree.tree.UpdatableLeaf;
 
 public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> {
-	public static final int          ORDINAL_TEST_SPLITS                          = 5;
-	public static final int          RESERVOIR_SIZE                               = 1000;
-	public static final Serializable MISSING_VALUE                                = "%missingVALUE%83257";
-	private static final int         HARD_MINIMUM_INSTANCES_PER_CATEGORICAL_VALUE = 0;
-	private final Scorer             scorer;
-	private int                      maxDepth                                     = Integer.MAX_VALUE;
-	private int                      maxCategoricalInSetSize                      = Integer.MAX_VALUE;
-	private boolean                  forceSplitsOnMissing                         = false;
-	private int                      smallTrainingSetLimit                        = 9;
-	private double                   ignoreAttributeAtNodeProbability             = 0.0;
-	private double                   minimumScore                                 = 0.00000000000001;
-	private int                      minCategoricalAttributeValueOccurances       = 0;
-	private int                      minLeafInstances                             = 0;
-	private boolean                  updatable                                    = false;
-	private boolean                  binaryClassifications                        = true;
-	private boolean                  pruneSameCategory                            = false;
-	private Serializable             minorityClassification;
-	private String                   splitAttribute                               = null;
-	private Set<String>              splitModelWhiteList;
-	private Serializable             id;
-	private Random                   random                                       = new Random();
-	private double                   eps                                          = .000001;
+	public static final int          ORDINAL_TEST_SPLITS = 5;
+	public static final int          RESERVOIR_SIZE      = 1000;
+	public static final Serializable MISSING_VALUE       = "%missingVALUE%83257";
+
+	private final Scorer scorer;
+	private int          maxDepth                               = Integer.MAX_VALUE;
+	private int          maxCategoricalInSetSize                = Integer.MAX_VALUE;
+	private boolean      forceSplitsOnMissing                   = false;
+	private int          smallTrainingSetLimit                  = 9;
+	private static int   minInstancesPerCategoricalVariable     = 10;
+	private double       ignoreAttributeAtNodeProbability       = 0.0;
+	private double       minimumScore                           = 0.00000000000001;
+	private int          minCategoricalAttributeValueOccurances = 0;
+	private int          minLeafInstances                       = 0;
+	private boolean      updatable                              = false;
+	private boolean      binaryClassifications                  = true;
+	private boolean      pruneSameCategory                      = false;
+	private Serializable minorityClassification;
+	private String       splitAttribute                         = null;
+	private Set<String>  splitModelWhiteList;
+	private Serializable id;
+	private Random       random                                 = new Random();
+	private double       eps                                    = .000001;
 
 	public TreeBuilder() {
 		this(new MSEScorer(MSEScorer.CrossValidationCorrection.FALSE));
@@ -135,6 +136,11 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 
 	public TreeBuilder smallTrainingSetLimit(int smallTrainingSetLimit) {
 		this.smallTrainingSetLimit = smallTrainingSetLimit;
+		return this;
+	}
+
+	public TreeBuilder minInstancesPerCategoricalVariable(int minInstancesPerCategoricalVariable) {
+		this.minInstancesPerCategoricalVariable = minInstancesPerCategoricalVariable;
 		return this;
 	}
 
@@ -760,7 +766,7 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 		final int averageInstancesPerValue = Iterables.size(trainingData) / values.size();
 		final boolean notEnoughTrainingDataGivenNumberOfValues = averageInstancesPerValue < Math
 				.max(this.minCategoricalAttributeValueOccurances,
-						HARD_MINIMUM_INSTANCES_PER_CATEGORICAL_VALUE);
+						minInstancesPerCategoricalVariable);
 		if (notEnoughTrainingDataGivenNumberOfValues) {
 			return true;
 		}
