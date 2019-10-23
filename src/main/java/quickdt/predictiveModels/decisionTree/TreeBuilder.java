@@ -46,24 +46,23 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 	public static final Serializable MISSING_VALUE       = "%missingVALUE%83257";
 
 	private final Scorer scorer;
-	private int          maxDepth                               = Integer.MAX_VALUE;
-	private int          maxCategoricalInSetSize                = Integer.MAX_VALUE;
-	private boolean      forceSplitsOnMissing                   = false;
-	private int          smallTrainingSetLimit                  = 9;
-	private static int   minInstancesPerCategoricalVariable     = 10;
-	private double       ignoreAttributeAtNodeProbability       = 0.0;
-	private double       minimumScore                           = 0.00000000000001;
-	private int          minCategoricalAttributeValueOccurances = 0;
-	private int          minLeafInstances                       = 0;
-	private boolean      updatable                              = false;
-	private boolean      binaryClassifications                  = true;
-	private boolean      pruneSameCategory                      = false;
+	private double       ignoreAttributeAtNodeProbability   = 0.0;
+	private int          maxDepth                           = Integer.MAX_VALUE;
+	private int          maxCategoricalInSetSize            = Integer.MAX_VALUE;
+	private boolean      forceSplitsOnMissing               = false;
+	private int          smallTrainingSetLimit              = 9;
+	private double       minimumScore                       = 0.00000000000001;
+	private int          minInstancesPerCategoricalVariable = 0;
+	private int          minLeafInstances                   = 0;
+	private boolean      updatable                          = false;
+	private boolean      binaryClassifications              = true;
+	private boolean      pruneSameCategory                  = false;
 	private Serializable minorityClassification;
-	private String       splitAttribute                         = null;
+	private String       splitAttribute                     = null;
 	private Set<String>  splitModelWhiteList;
 	private Serializable id;
-	private Random       random                                 = new Random();
-	private double       eps                                    = .000001;
+	private Random       random                             = new Random();
+	private double       eps                                = .000001;
 
 	public TreeBuilder() {
 		this(new MSEScorer(MSEScorer.CrossValidationCorrection.FALSE));
@@ -124,8 +123,8 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 		return this;
 	}
 
-	public TreeBuilder minCategoricalAttributeValueOccurances(int occurances) {
-		this.minCategoricalAttributeValueOccurances = occurances;
+	public TreeBuilder minInstancesPerCategoricalVariable(int minLimit) {
+		this.minInstancesPerCategoricalVariable = minLimit;
 		return this;
 	}
 
@@ -136,11 +135,6 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 
 	public TreeBuilder smallTrainingSetLimit(int smallTrainingSetLimit) {
 		this.smallTrainingSetLimit = smallTrainingSetLimit;
-		return this;
-	}
-
-	public TreeBuilder minInstancesPerCategoricalVariable(int minInstancesPerCategoricalVariable) {
-		this.minInstancesPerCategoricalVariable = minInstancesPerCategoricalVariable;
 		return this;
 	}
 
@@ -569,7 +563,7 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 		ClassificationCounter inCounts = new ClassificationCounter();
 
 		// map of value _> classificationCounter
-		List<AttributeValueWithClassificationCounter> valuesWithClassificationCounters = valueOutcomeCountsPairs
+		final List<AttributeValueWithClassificationCounter> valuesWithClassificationCounters = valueOutcomeCountsPairs
 				.getValue1();
 
 		// force a split on missing
@@ -635,6 +629,11 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 			}
 		}
 
+		Pair<ClassificationCounter, ClassificationCounter> counters = recalculateCountForInset(
+				inSet, valueOutcomeCountsPairs.getValue0(), valuesWithClassificationCounters);
+		inCounts = counters.getValue0();
+		outCounts = counters.getValue1();
+
 		if (inCounts.getTotal() < minLeafInstances || outCounts.getTotal() < minLeafInstances) {
 			return null;
 		}
@@ -643,6 +642,19 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 		final Set<Serializable> returnSet = inSet.size() <= outSet.size() ? inSet : outSet;
 
 		return Pair.with(new CategoricalBranch(parent, attribute, returnSet), bestScore);
+	}
+
+	private Pair<ClassificationCounter, ClassificationCounter> recalculateCountForInset(
+			Set<Serializable> inSet, ClassificationCounter totalCount,
+			List<AttributeValueWithClassificationCounter> allValuesWithCount) {
+		ClassificationCounter inCount = new ClassificationCounter();
+		for (AttributeValueWithClassificationCounter valueWithCount : allValuesWithCount) {
+			if (inSet.contains(valueWithCount.attributeValue)) {
+				inCount = inCount.add(valueWithCount.classificationCounter);
+				totalCount = totalCount.subtract(valueWithCount.classificationCounter);
+			}
+		}
+		return Pair.with(inCount, totalCount);
 	}
 
 	private Pair<? extends Branch, Double> createNClassCategoricalNode(Branch parent,
@@ -764,13 +776,7 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 			final Iterable<? extends AbstractInstance> trainingData,
 			final Set<Serializable> values) {
 		final int averageInstancesPerValue = Iterables.size(trainingData) / values.size();
-		final boolean notEnoughTrainingDataGivenNumberOfValues = averageInstancesPerValue < Math
-				.max(this.minCategoricalAttributeValueOccurances,
-						minInstancesPerCategoricalVariable);
-		if (notEnoughTrainingDataGivenNumberOfValues) {
-			return true;
-		}
-		return false;
+		return averageInstancesPerValue < this.minInstancesPerCategoricalVariable;
 	}
 
 	private Set<Serializable> getAttributeValues(
@@ -789,7 +795,7 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 	private boolean isBelowMinAttributeOccurancesThreshold(
 			final ClassificationCounter testValCounts) {
 		double totalCounts = testValCounts.getTotal();
-		return totalCounts < minCategoricalAttributeValueOccurances;
+		return totalCounts < minInstancesPerCategoricalVariable;
 	}
 
 	private Pair<? extends Branch, Double> createNumericNode(Branch parent, final String attribute,

@@ -52,7 +52,7 @@ public class TreeBuilderBuilder
 		return new TreeBuilder((Scorer) cfg.get(SCORER))
 				.ignoreAttributeAtNodeProbability((Double) cfg.get(IGNORE_ATTR_PROB))
 				.maxDepth((Integer) cfg.get(MAX_DEPTH)).minimumScore((Double) cfg.get(MIN_SCORE))
-				.minCategoricalAttributeValueOccurances((Integer) cfg.get(MIN_CAT_ATTR_OCC))
+				.minInstancesPerCategoricalVariable((Integer) cfg.get(MIN_CAT_ATTR_OCC))
 				.minLeafInstances((Integer) cfg.get(MIN_LEAF_INSTANCES));
 	}
 }

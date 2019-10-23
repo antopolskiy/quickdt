@@ -895,5 +895,7 @@ public class TreeBuilderTest {
 		final TreeBuilder tb = new TreeBuilder().forceSplitOnNull().maxCategoricalInSetSize(3)
 				.maxDepth(5).minLeafInstances(10);
 		Tree tree = tb.buildPredictiveModel(instances);
+		assertTrue(tree.node instanceof CategoricalBranch);
+		assertEquals(71.0, ((Branch) tree.node).trueChild.getClassificationCounter().getTotal());
 	}
 }
