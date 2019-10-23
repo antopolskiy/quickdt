@@ -889,4 +889,11 @@ public class TreeBuilderTest {
 		}
 	}
 
+	@Test
+	public void testGateway() {
+		List<Instance> instances = loadCsvDataset(7, "quickdt/gateway.csv.gz");
+		final TreeBuilder tb = new TreeBuilder().forceSplitOnNull().maxCategoricalInSetSize(3)
+				.maxDepth(5).minLeafInstances(10);
+		Tree tree = tb.buildPredictiveModel(instances);
+	}
 }
