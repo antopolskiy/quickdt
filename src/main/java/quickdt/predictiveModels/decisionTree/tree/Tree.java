@@ -45,8 +45,7 @@ public class Tree implements PredictiveModel {
 	 *              majority category.
 	 */
 	public Tree collapseDeepestLeaves(boolean prune) {
-		node.collapseDeepestLeaves();
-		Tree tree = new Tree(node);
+		Tree tree = new Tree(node.collapseDeepestLeaves());
 		if (prune) {
 			tree = tree.pruneSameCategoryLeaves();
 		}

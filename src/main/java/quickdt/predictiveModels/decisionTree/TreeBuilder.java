@@ -164,7 +164,7 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 		setBinaryClassificationProperties(trainingData);
 		Tree tree = new Tree(buildTree(null, trainingData, 0, createNumericSplits(trainingData)));
 		if (pruneSameCategory) {
-			tree.pruneSameCategoryLeaves();
+			return tree.pruneSameCategoryLeaves();
 		}
 		return tree;
 	}
