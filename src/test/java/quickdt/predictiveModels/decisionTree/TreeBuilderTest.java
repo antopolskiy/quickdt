@@ -688,12 +688,12 @@ public class TreeBuilderTest {
 		logBranchRecursively(root);
 
 		Map<Serializable, Double> recall = tree.getRecall();
-//		System.out.println(recall);
+		// System.out.println(recall);
 		assertTrue(recall.get("0") - 1 < 0.001);
 		assertTrue(recall.get("1") - 1 < 0.001);
 
 		Map<Serializable, Double> precision = tree.getPrecision();
-//		System.out.println(precision);
+		// System.out.println(precision);
 		assertTrue(precision.get("0") - 1 < 0.001);
 		assertTrue(precision.get("1") - 1 < 0.001);
 
@@ -710,7 +710,7 @@ public class TreeBuilderTest {
 		final Tree tree = tb.buildPredictiveModel(instances);
 		final Branch root = (Branch) tree.node;
 
-//		logBranchRecursively(root);
+		// logBranchRecursively(root);
 
 		Map<Serializable, Double> recall = tree.getRecall();
 		assertTrue(recall.get("0") - 0.833 < 0.001);
@@ -733,7 +733,7 @@ public class TreeBuilderTest {
 		final Tree tree = tb.buildPredictiveModel(instances);
 		final Branch root = (Branch) tree.node;
 
-//		logBranchRecursively(root);
+		// logBranchRecursively(root);
 
 		Map<Serializable, Double> recall = tree.getRecall();
 		assertTrue(recall.get("0") - 0.777 < 0.001);
@@ -757,19 +757,19 @@ public class TreeBuilderTest {
 
 		logBranchRecursively(root);
 
-//		for (Leaf leaf : tree.getLeaves()) {
-//			System.out.println(leaf);
-//			System.out.println(leaf.getMajorityClass());
-//		}
+		// for (Leaf leaf : tree.getLeaves()) {
+		// System.out.println(leaf);
+		// System.out.println(leaf.getMajorityClass());
+		// }
 
 		Map<Serializable, Double> recall = tree.getRecall();
-//		System.out.println(recall);
+		// System.out.println(recall);
 		assertTrue(recall.get("0") - 0.777 < 0.001);
 		assertTrue(recall.get("1") - 0.833 < 0.001);
 		assertTrue(recall.get("2") - 0.571 < 0.001);
 
 		Map<Serializable, Double> precision = tree.getPrecision();
-//		System.out.println(precision);
+		// System.out.println(precision);
 		assertTrue(precision.get("0") - 0.777 < 0.001);
 		assertTrue(precision.get("1") - 0.555 < 0.001);
 		assertTrue(precision.get("2") - 1 < 0.001);
@@ -786,13 +786,13 @@ public class TreeBuilderTest {
 
 		Tree tree = tb.buildPredictiveModel(instances);
 
-//		final Branch root = (Branch) tree.node;
-//		logBranchRecursively(root);
-//
-//		for (Leaf leaf : tree.getLeaves()) {
-//			System.out.println(leaf);
-//			System.out.println(leaf.getMajorityClass());
-//		}
+		// final Branch root = (Branch) tree.node;
+		// logBranchRecursively(root);
+		//
+		// for (Leaf leaf : tree.getLeaves()) {
+		// System.out.println(leaf);
+		// System.out.println(leaf.getMajorityClass());
+		// }
 
 		Map<Serializable, Double> recall = tree.getRecall();
 		System.out.println(recall);
@@ -826,9 +826,9 @@ public class TreeBuilderTest {
 		assertEquals(5, tree.getLeaves().size());
 
 		// assertTrue(node instanceof CategoricalBranch);
-//		CategoricalBranch branch = (CategoricalBranch) node;
-//		assertEquals(1, branch.inSet.size());
-//		assertTrue(branch.inSet.contains("A"));
+		// CategoricalBranch branch = (CategoricalBranch) node;
+		// assertEquals(1, branch.inSet.size());
+		// assertTrue(branch.inSet.contains("A"));
 	}
 
 	@Test
@@ -844,9 +844,9 @@ public class TreeBuilderTest {
 		assertEquals(1, tree.getLeaves().size());
 		tree.collapseDeepestLeaves(true);
 
-//		logBranchRecursively((Branch) tree.node);
+		// logBranchRecursively((Branch) tree.node);
 
-//		assertEquals(5, tree.getLeaves().size());
+		// assertEquals(5, tree.getLeaves().size());
 
 		// assertTrue(node instanceof CategoricalBranch);
 		// CategoricalBranch branch = (CategoricalBranch) node;
@@ -897,5 +897,20 @@ public class TreeBuilderTest {
 		Tree tree = tb.buildPredictiveModel(instances);
 		assertTrue(tree.node instanceof CategoricalBranch);
 		assertEquals(71.0, ((Branch) tree.node).trueChild.getClassificationCounter().getTotal());
+	}
+
+	@Test
+	public void testUnclassifiableCategories() {
+
+		final List<Instance> instances = loadCsvDataset(1,
+				"quickdt/synthetic/categoricalSomeCategoriesCannotBeClassified.csv.gz");
+
+		final TreeBuilder tb = new TreeBuilder().smallTrainingSetLimit(2)
+				.maxCategoricalInSetSize(2);
+		Tree tree = tb.buildPredictiveModel(instances);
+
+		assertEquals("{0=5.0, 1=5.0, 2=0.0}", tree.getTruePositiveCounts().toString());
+		assertEquals("{0=0.9090909090909091, 1=0.9090909090909091, 2=0.0}",
+				tree.getF1().toString());
 	}
 }

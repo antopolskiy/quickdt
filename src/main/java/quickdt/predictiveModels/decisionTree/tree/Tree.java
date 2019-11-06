@@ -202,6 +202,22 @@ public class Tree implements PredictiveModel {
 		return this;
 	}
 
+	public Map<Serializable, Double> getF1() {
+		Map<Serializable, Double> metric = new HashMap<>();
+		Map<Serializable, Double> recall = getRecall();
+		Map<Serializable, Double> precision = getPrecision();
+
+		Set<Serializable> targets = getTargets();
+		for (Serializable target : targets) {
+			Double targetRecall = recall.get(target);
+			Double targetPrecision = precision.get(target);
+			double f1Score = 2 * (targetRecall * targetPrecision)
+					/ (targetRecall + targetPrecision);
+			metric.put(target, Double.isNaN(f1Score) ? 0.0 : f1Score);
+		}
+		return metric;
+	}
+
 	@Override
 	public int hashCode() {
 		return node.hashCode();
