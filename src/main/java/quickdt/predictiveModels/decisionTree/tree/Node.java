@@ -83,23 +83,28 @@ public abstract class Node implements Serializable {
 	 * @return the newly generated leaves, notice that these are not necessarily all
 	 *         the leaves of the new highest depth
 	 */
-	public List<Leaf> pruneDeepestLeaves() {
+	Node collapseDeepestLeaves() {
 		int depth = 0;
 		List<Leaf> leaves = this.collectLeaves();
+
 		List<Leaf> maxDepthLeaves = new ArrayList<>(leaves.size());
 		for (Leaf leaf : leaves) {
 			if (leaf.depth > depth) {
 				depth = leaf.depth;
 				maxDepthLeaves = new ArrayList<>(leaves.size());
-			}
-			if (leaf.depth == depth) {
+			} else if (leaf.depth == depth) {
 				maxDepthLeaves.add(leaf);
 			}
 		}
-		leaves = new ArrayList<>(leaves.size());
+
 		for (Leaf leaf : maxDepthLeaves) {
-			leaves.add(leaf.parent.collapse(depth - 1));
+			if (!leaf.isRoot()) {
+				if (leaf.parent.isRoot()) {
+					return leaf.parent.collapse(0);
+				}
+				leaf.parent.collapse(depth - 1);
+			}
 		}
-		return leaves;
+		return this;
 	}
 }

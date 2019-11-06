@@ -4,7 +4,8 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>quickdt</groupId>
     <artifactId>quickdt</artifactId>
-    <version>0.2.2.1</version>
+    <version>0.2.2.2</version>
+    <packaging>jar</packaging>
     <distributionManagement>
         <repository>
             <id>gh-pages</id>
@@ -30,9 +31,9 @@
             <version>2.2.0</version>
         </dependency>
         <dependency>
-        	<groupId>com.amazonaws</groupId>
-        	<artifactId>aws-java-sdk</artifactId>
-        	<version>1.11.592</version>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk</artifactId>
+            <version>1.11.592</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>

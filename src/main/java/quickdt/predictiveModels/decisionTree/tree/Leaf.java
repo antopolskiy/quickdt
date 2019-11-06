@@ -8,6 +8,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.apache.commons.lang.NotImplementedException;
+
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Iterables;
 
@@ -123,24 +125,23 @@ public class Leaf extends Node {
 	@Override
 	public String toString() {
 		StringBuilder builder = new StringBuilder();
-		for (Node n = parent; n != null; n = n.parent) {
-			builder.append(n + "->");
+		Node currentNode = this;
+		for (Branch n = parent; n != null; n = n.parent) {
+			if (currentNode.equals(n.trueChild)) {
+				builder.append(n.toString() + "->");
+			} else {
+				builder.append(n.toNotString() + "->");
+			}
+			currentNode = n;
 		}
 		builder.append("\n");
 		for (Serializable key : getClassifications()) {
 			builder.append(key + "=" + this.getProbability(key) + " ");
 			builder.append("(matches=" + this.getTruePositives() + "; ");
-//			builder.append("exceptions=" +  + "; ");
 			builder.append("contaminations=" + this.getFalsePositives() + ")");
 			builder.append("\n");
 		}
 		return builder.toString();
-	}
-
-	private Serializable getMajorityClass() {
-		Map.Entry<Serializable, Double> max = classificationCounts.getCounts().entrySet().stream()
-				.max((x, y) -> (int) (y.getValue() - x.getValue())).get();
-		return max.getKey();
 	}
 
 	public double getCountForClass(Serializable classification) {
@@ -148,11 +149,11 @@ public class Leaf extends Node {
 	}
 
 	public double getTruePositives() {
-		return classificationCounts.getCount(getMajorityClass());
+		return classificationCounts.getCount(getBestClassification());
 	}
 
 	public double getFalseNegatives(ClassificationCounter treeClassificationCounter) {
-		return treeClassificationCounter.getCount(getMajorityClass()) - getTruePositives();
+		return treeClassificationCounter.getCount(getBestClassification()) - getTruePositives();
 	}
 
 	public double getFalsePositives() {
@@ -206,5 +207,37 @@ public class Leaf extends Node {
 		result = 31 * result + (int) (temp ^ (temp >>> 32));
 		result = 31 * result + classificationCounts.hashCode();
 		return result;
+	}
+
+	Node getSibling() {
+		if (isTrueChild()) {
+			return parent.falseChild;
+		} else if (isFalseChild()) {
+			return parent.trueChild;
+		} else if (isRoot()) {
+			return null;
+		} else {
+			throw new NotImplementedException();
+		}
+	}
+
+	private boolean isFalseChild() {
+		if (!isRoot()) {
+			return this == parent.falseChild;
+		} else {
+			return false;
+		}
+	}
+
+	private boolean isTrueChild() {
+		if (!isRoot()) {
+			return this == parent.trueChild;
+		} else {
+			return false;
+		}
+	}
+
+	Leaf pruneMe() {
+		return parent.collapse(depth - 1);
 	}
 }
