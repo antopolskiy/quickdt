@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>quickdt</groupId>
     <artifactId>quickdt</artifactId>
-    <version>0.2.2.2</version>
+    <version>0.2.2.2.1</version>
     <packaging>jar</packaging>
     <distributionManagement>
         <repository>
@@ -17,11 +17,6 @@
             <id>sanity-maven-repo</id>
             <name>Sanity's Maven repository on GitHub</name>
             <url>http://sanity.github.com/maven-repo/repository/</url>
-        </repository>
-        <repository>
-            <id>twitter</id>
-            <name>twitter</name>
-            <url>http://maven.twttr.com</url>
         </repository>
     </repositories>
     <dependencies>
@@ -43,7 +38,7 @@
         <dependency>
             <groupId>com.twitter.common</groupId>
             <artifactId>stats-util</artifactId>
-            <version>0.0.15</version>
+            <version>0.0.60</version>
         </dependency>
         <dependency>
             <groupId>org.jooq</groupId>
