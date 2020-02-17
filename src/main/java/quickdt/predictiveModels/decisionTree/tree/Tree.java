@@ -91,8 +91,17 @@ public class Tree implements PredictiveModel {
 				.collect(Collectors.toList());
 	}
 
+	public List<Node> getNodesWithMajorityIn(Serializable target) {
+		return getNodes().stream().filter(leaf -> leaf.getBestClassification().equals(target))
+				.collect(Collectors.toList());
+	}
+
 	public List<Leaf> getLeaves() {
 		return node.collectLeaves();
+	}
+
+	public List<Node> getNodes() {
+		return node.collectNodes();
 	}
 
 	private Set<Serializable> getTargets() {
@@ -178,6 +187,38 @@ public class Tree implements PredictiveModel {
 			counts.put(target, falseNegatives);
 		}
 		return counts;
+	}
+
+	public Map<Serializable, Map<Serializable, Double>> getFalsePositiveDistribution() {
+		Map<Serializable, Map<Serializable, Double>> dist = new HashMap<>();
+
+		for (Serializable target : getTargets()) {
+			List<Leaf> targetLeaves = getLeavesWithMajorityIn(target);
+			Map<Serializable, Double> falsePositives = new HashMap<>();
+			targetLeaves.forEach(l -> {
+				Map<Serializable, Double> next = l.getFalsePositivesDistribution();
+				next.forEach((k, v) -> {
+					falsePositives.merge(k, v, Double::sum);
+				});
+			});
+			dist.put(target, falsePositives);
+		}
+		return dist;
+	}
+
+	public Map<Serializable, Map<Serializable, Double>> getFalseNegativeDistribution() {
+		Map<Serializable, Map<Serializable, Double>> dist = new HashMap<>();
+
+		Set<Serializable> targets = getTargets();
+		for (Serializable target : targets) {
+			List<Leaf> targetLeaves = getLeavesWithMajorityIn(target);
+			Map<Serializable, Double> falseNegatives = getLeaves().stream()
+					.filter(o -> !targetLeaves.contains(o))
+					.collect(Collectors.toMap(l -> l.getBestClassification(),
+							l -> l.getCountForClass(target), Double::sum));
+			dist.put(target, falseNegatives);
+		}
+		return dist;
 	}
 
 	public Tree pruneSameCategoryLeaves() {

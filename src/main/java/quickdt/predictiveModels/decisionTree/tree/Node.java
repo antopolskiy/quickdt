@@ -4,11 +4,32 @@ import java.io.PrintStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import quickdt.data.Attributes;
 
 public abstract class Node implements Serializable {
 	private static final long serialVersionUID = -8713974861744567620L;
+
+	protected transient volatile Map.Entry<Serializable, Double> bestClassificationEntry = null;
+
+	protected synchronized Map.Entry<Serializable, Double> getBestClassificationEntry() {
+		if (bestClassificationEntry != null) {
+			return bestClassificationEntry;
+		}
+
+		for (Map.Entry<Serializable, Double> e : getClassificationCounter().getCounts()
+				.entrySet()) {
+			if (bestClassificationEntry == null
+					|| e.getValue() > bestClassificationEntry.getValue()) {
+				bestClassificationEntry = e;
+			}
+		}
+
+		return bestClassificationEntry;
+	}
 
 	public abstract void dump(int indent, PrintStream ps);
 
@@ -41,6 +62,8 @@ public abstract class Node implements Serializable {
 
 	public abstract List<Leaf> collectLeaves();
 
+	public abstract List<Node> collectNodes();
+
 	/**
 	 * Return the mean depth of leaves in the tree. A lower number generally
 	 * indicates that the decision tree learner has done a better job.
@@ -61,6 +84,43 @@ public abstract class Node implements Serializable {
 	public abstract int size();
 
 	public abstract ClassificationCounter getClassificationCounter();
+
+	/**
+	 *
+	 * @return The most likely classification
+	 */
+	public Serializable getBestClassification() {
+		return getBestClassificationEntry().getKey();
+	}
+
+	public double getTruePositives() {
+		return getClassificationCounter().getCount(getBestClassification());
+	}
+
+	public double getFalseNegatives(ClassificationCounter treeClassificationCounter) {
+		return treeClassificationCounter.getCount(getBestClassification()) - getTruePositives();
+	}
+
+	public double getFalsePositives() {
+		return getClassificationCounter().getTotal() - getTruePositives();
+	}
+
+	public Map<Serializable, Double> getFalsePositivesDistribution() {
+		Serializable majority = getBestClassification();
+		return getClassificationCounter().allClassifications().stream()
+				.filter(cls -> !cls.equals(majority)).collect(Collectors.toMap(Function.identity(),
+						c -> getClassificationCounter().getCount(c)));
+	}
+
+	public double getProbability(Serializable classification) {
+		final double totalCount = getClassificationCounter().getTotal();
+		if (totalCount == 0) {
+			throw new IllegalStateException(
+					"Trying to get a probability from a Leaf with no examples");
+		}
+		final double probability = getClassificationCounter().getCount(classification) / totalCount;
+		return probability;
+	}
 
 	@Override
 	public abstract boolean equals(final Object obj);

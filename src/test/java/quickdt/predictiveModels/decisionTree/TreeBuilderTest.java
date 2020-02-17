@@ -696,7 +696,6 @@ public class TreeBuilderTest {
 		// System.out.println(precision);
 		assertTrue(precision.get("0") - 1 < 0.001);
 		assertTrue(precision.get("1") - 1 < 0.001);
-
 	}
 
 	@Test
@@ -773,6 +772,32 @@ public class TreeBuilderTest {
 		assertTrue(precision.get("0") - 0.777 < 0.001);
 		assertTrue(precision.get("1") - 0.555 < 0.001);
 		assertTrue(precision.get("2") - 1 < 0.001);
+
+		Map<Serializable, Map<Serializable, Double>> falsePositiveDistribution = tree
+				.getFalsePositiveDistribution();
+		assertEquals(tree.getClassificationCounter().allClassifications().size(),
+				falsePositiveDistribution.size());
+		for (Serializable next : tree.getClassificationCounter().allClassifications()) {
+			assertFalse(falsePositiveDistribution.get(next).containsKey(next));
+		}
+
+		Map<Serializable, Map<Serializable, Double>> falseNegativeDistribution = tree
+				.getFalseNegativeDistribution();
+		assertEquals(tree.getClassificationCounter().allClassifications().size(),
+				falseNegativeDistribution.size());
+		for (Serializable next : tree.getClassificationCounter().allClassifications()) {
+			assertFalse(falseNegativeDistribution.get(next).containsKey(next));
+		}
+
+		double totalFalseNegatives = falsePositiveDistribution.entrySet().stream()
+				.mapToDouble(
+						e -> e.getValue().values().stream().mapToDouble(Double::doubleValue).sum())
+				.sum();
+		double totalFalsePositives = falseNegativeDistribution.entrySet().stream()
+				.mapToDouble(
+						e -> e.getValue().values().stream().mapToDouble(Double::doubleValue).sum())
+				.sum();
+		assertEquals(totalFalseNegatives, totalFalsePositives);
 	}
 
 	@Test
@@ -805,6 +830,32 @@ public class TreeBuilderTest {
 		assertTrue(precision.get("0") - 0.7 < 0.001);
 		assertTrue(precision.get("1") - 0.8 < 0.001);
 		assertTrue(precision.get("2") - 1 < 0.001);
+
+		Map<Serializable, Map<Serializable, Double>> falsePositiveDistribution = tree
+				.getFalsePositiveDistribution();
+		assertEquals(tree.getClassificationCounter().allClassifications().size(),
+				falsePositiveDistribution.size());
+		for (Serializable next : tree.getClassificationCounter().allClassifications()) {
+			assertFalse(falsePositiveDistribution.get(next).containsKey(next));
+		}
+
+		Map<Serializable, Map<Serializable, Double>> falseNegativeDistribution = tree
+				.getFalseNegativeDistribution();
+		assertEquals(tree.getClassificationCounter().allClassifications().size(),
+				falseNegativeDistribution.size());
+		for (Serializable next : tree.getClassificationCounter().allClassifications()) {
+			assertFalse(falseNegativeDistribution.get(next).containsKey(next));
+		}
+
+		double totalFalseNegatives = falsePositiveDistribution.entrySet().stream()
+				.mapToDouble(
+						e -> e.getValue().values().stream().mapToDouble(Double::doubleValue).sum())
+				.sum();
+		double totalFalsePositives = falseNegativeDistribution.entrySet().stream()
+				.mapToDouble(
+						e -> e.getValue().values().stream().mapToDouble(Double::doubleValue).sum())
+				.sum();
+		assertEquals(totalFalseNegatives, totalFalsePositives);
 	}
 
 	@Test

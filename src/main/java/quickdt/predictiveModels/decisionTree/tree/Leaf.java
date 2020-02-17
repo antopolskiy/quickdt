@@ -4,7 +4,6 @@ import java.io.PrintStream;
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -40,8 +39,6 @@ public class Leaf extends Node {
 	 */
 	public final ClassificationCounter classificationCounts;
 
-	protected transient volatile Map.Entry<Serializable, Double> bestClassificationEntry = null;
-
 	public Leaf(Branch parent, final Iterable<? extends AbstractInstance> instances,
 			final int depth) {
 		this(parent, ClassificationCounter.countAll(instances), depth);
@@ -59,33 +56,9 @@ public class Leaf extends Node {
 		this.depth = depth;
 	}
 
-	/**
-	 *
-	 * @return The most likely classification
-	 */
-
 	@Override
 	public ClassificationCounter getClassificationCounter() {
 		return classificationCounts;
-	}
-
-	public Serializable getBestClassification() {
-		return getBestClassificationEntry().getKey();
-	}
-
-	protected synchronized Map.Entry<Serializable, Double> getBestClassificationEntry() {
-		if (bestClassificationEntry != null) {
-			return bestClassificationEntry;
-		}
-
-		for (Map.Entry<Serializable, Double> e : classificationCounts.getCounts().entrySet()) {
-			if (bestClassificationEntry == null
-					|| e.getValue() > bestClassificationEntry.getValue()) {
-				bestClassificationEntry = e;
-			}
-		}
-
-		return bestClassificationEntry;
 	}
 
 	@Override
@@ -103,6 +76,11 @@ public class Leaf extends Node {
 
 	@Override
 	public List<Leaf> collectLeaves() {
+		return Collections.singletonList(this);
+	}
+
+	@Override
+	public List<Node> collectNodes() {
 		return Collections.singletonList(this);
 	}
 
@@ -145,33 +123,11 @@ public class Leaf extends Node {
 	}
 
 	public double getCountForClass(Serializable classification) {
-		return classificationCounts.getCount(classification);
-	}
-
-	public double getTruePositives() {
-		return classificationCounts.getCount(getBestClassification());
-	}
-
-	public double getFalseNegatives(ClassificationCounter treeClassificationCounter) {
-		return treeClassificationCounter.getCount(getBestClassification()) - getTruePositives();
-	}
-
-	public double getFalsePositives() {
-		return classificationCounts.getTotal() - getTruePositives();
-	}
-
-	public double getProbability(Serializable classification) {
-		final double totalCount = classificationCounts.getTotal();
-		if (totalCount == 0) {
-			throw new IllegalStateException(
-					"Trying to get a probability from a Leaf with no examples");
-		}
-		final double probability = classificationCounts.getCount(classification) / totalCount;
-		return probability;
+		return getClassificationCounter().getCount(classification);
 	}
 
 	public Set<Serializable> getClassifications() {
-		return classificationCounts.getCounts().keySet();
+		return getClassificationCounter().getCounts().keySet();
 	}
 
 	@Override
@@ -191,7 +147,7 @@ public class Leaf extends Node {
 		if (Double.compare(leaf.exampleCount, exampleCount) != 0) {
 			return false;
 		}
-		if (!classificationCounts.equals(leaf.classificationCounts)) {
+		if (!getClassificationCounter().equals(leaf.getClassificationCounter())) {
 			return false;
 		}
 
@@ -205,7 +161,7 @@ public class Leaf extends Node {
 		result = depth;
 		temp = Double.doubleToLongBits(exampleCount);
 		result = 31 * result + (int) (temp ^ (temp >>> 32));
-		result = 31 * result + classificationCounts.hashCode();
+		result = 31 * result + getClassificationCounter().hashCode();
 		return result;
 	}
 

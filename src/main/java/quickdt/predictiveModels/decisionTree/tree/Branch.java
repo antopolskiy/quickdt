@@ -79,6 +79,14 @@ public abstract class Branch extends Node {
 	}
 
 	@Override
+	public List<Node> collectNodes() {
+		List<Node> result = new LinkedList<>(trueChild.collectNodes());
+		result.addAll(falseChild.collectNodes());
+		result.add(this);
+		return result;
+	}
+
+	@Override
 	protected Leaf collapse(int newDepth) {
 		Leaf newLeaf = new Leaf(parent, getClassificationCounter(), newDepth);
 
