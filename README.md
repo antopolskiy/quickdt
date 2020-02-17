@@ -1,20 +1,18 @@
 Quick Decision Tree Learner
 ===========================
 
-Build Status: [![Build Status](https://travis-ci.org/sanity/quickdt.png?branch=master)](https://travis-ci.org/sanity/quickdt)
-
 License
 -------
 
-QuickDT is released under the GNU Lesser General Public License version 3.
+QuickDT is released under the [GNU Lesser General Public License version 3](https://www.gnu.org/licenses/lgpl-3.0.en.html).
 
 What is it?
 -----------
 If you are unfamiliar with Decision Tree Learning, it's the process of building a decision tree to categorize things, based
-on training data that you feed it.  [Learn more on Wikipedia](http://en.wikipedia.org/wiki/Decision_tree_learning).
+on training data that you feed it. [Learn more on Wikipedia](http://en.wikipedia.org/wiki/Decision_tree_learning).
 
 QuickDT is a Java Decision Tree Learning library designed to be flexible, easy to use, fast, and effective.  QuickDT was originally
-written by [Ian Clarke](http://blog.locut.us/), with significant contributions by Alex Hawk and Chris Reeves of [OneSpot](http://onespot.com/).  The initial public release was on 2011-09-21.
+written by [Ian Clarke](http://blog.locut.us/), with significant contributions by Alex Hawk and Chris Reeves of [OneSpot](http://onespot.com/).  The initial public release was on 2011-09-21. Sergey Antopolskiy and Martin Ruskov of [myInvenio](https://www.my-invenio.com/) needed a machine learning algorithm whose results are easier to interpret by end users, so added some optional features to that end.
 
 QuickDT also supports Random Decision Forests, which deliver a significant improvement in predictive performance by combining
 multiple decision trees. QuickDT also includes functionality to easily do cross-validation in a flexible but easy-to-use manner.
