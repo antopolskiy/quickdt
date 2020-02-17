@@ -252,7 +252,7 @@ public class TreeBuilderTest {
 	// // final TreeBuilder tb = new TreeBuilder(new SplitDiffScorer())
 	// final TreeBuilder tb = new TreeBuilder()
 	// // final TreeBuilder tb = new TreeBuilder(new GiniImpurityScorer())
-	// .minimumScore(1e-12).maxCategoricalInSetSize(n).smallTrainingSetLimit(2);
+	// .minimumScore(1e-12).maxCategoricalInSetSize(n);
 	// final Tree tree = tb.buildPredictiveModel(instances);
 	// final Node node = tree.node;
 	//
@@ -299,7 +299,7 @@ public class TreeBuilderTest {
 			// final TreeBuilder tb = new TreeBuilder(new SplitDiffScorer())
 			final TreeBuilder tb = new TreeBuilder()
 					// final TreeBuilder tb = new TreeBuilder(new GiniImpurityScorer())
-					.minimumScore(1e-12).maxCategoricalInSetSize(n).smallTrainingSetLimit(2);
+					.minimumScore(1e-12).maxCategoricalInSetSize(n);
 			final Tree tree = tb.buildPredictiveModel(instances);
 			final Node node = tree.node;
 
@@ -319,7 +319,7 @@ public class TreeBuilderTest {
 			// final TreeBuilder tb = new TreeBuilder(new SplitDiffScorer())
 			final TreeBuilder tb = new TreeBuilder()
 					// final TreeBuilder tb = new TreeBuilder(new GiniImpurityScorer())
-					.minimumScore(1e-12).maxCategoricalInSetSize(n).smallTrainingSetLimit(2);
+					.minimumScore(1e-12).maxCategoricalInSetSize(n);
 			final Tree tree = tb.buildPredictiveModel(instances);
 			final Node node = tree.node;
 
@@ -331,7 +331,7 @@ public class TreeBuilderTest {
 	public void testBasicNumericMultipleSplit() {
 		final List<Instance> instances = loadCsvDataset(1,
 				"quickdt/synthetic/basicMultipleSplitNumeric.csv.gz", Arrays.asList(0));
-		final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).smallTrainingSetLimit(2);
+		final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12);
 		final Tree tree = tb.buildPredictiveModel(instances);
 		final Node node = tree.node;
 
@@ -342,7 +342,7 @@ public class TreeBuilderTest {
 	public void testBasicNumericWithMissing() {
 		final List<Instance> instances = loadCsvDataset(1,
 				"quickdt/synthetic/basicNumericWithMissing.csv.gz", Arrays.asList(0));
-		final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).smallTrainingSetLimit(2);
+		final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12);
 		final Tree tree = tb.buildPredictiveModel(instances);
 		final Node node = tree.node;
 
@@ -355,7 +355,7 @@ public class TreeBuilderTest {
 		List<Integer> numericColumns = Arrays.asList(0);
 		List<Instance> instances = loadCsvDataset(1,
 				"quickdt/synthetic/basicNumericWithMissing.csv.gz", numericColumns);
-		final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).smallTrainingSetLimit(2);
+		final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12);
 		instances = setNumericNullsToMean(instances, new String[] { "NUM" });
 		final Tree tree = tb.buildPredictiveModel(instances);
 		final Node node = tree.node;
@@ -373,8 +373,7 @@ public class TreeBuilderTest {
 		List<Integer> numericColumns = Arrays.asList(0);
 		List<Instance> instances = loadCsvDataset(1,
 				"quickdt/synthetic/basicLargerNumericWithMissing.csv.gz", numericColumns);
-		final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).smallTrainingSetLimit(2)
-				.maxCategoricalInSetSize(1);
+		final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).maxCategoricalInSetSize(1);
 
 		final Tree tree = tb.buildPredictiveModel(instances);
 		final Node node = tree.node;
@@ -399,8 +398,7 @@ public class TreeBuilderTest {
 		List<Integer> numericColumns = Arrays.asList(0);
 		List<Instance> instances = loadCsvDataset(1,
 				"quickdt/synthetic/basicNumericWithMissingInMajority.csv.gz", numericColumns);
-		final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).smallTrainingSetLimit(2)
-				.maxCategoricalInSetSize(1);
+		final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).maxCategoricalInSetSize(1);
 
 		final Tree tree = tb.buildPredictiveModel(instances);
 		final Node node = tree.node;
@@ -419,8 +417,8 @@ public class TreeBuilderTest {
 		List<Integer> numericColumns = Arrays.asList(0);
 		List<Instance> instances = loadCsvDataset(1,
 				"quickdt/synthetic/basicNumericWithMissingInMajority.csv.gz", numericColumns);
-		final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).smallTrainingSetLimit(2)
-				.maxCategoricalInSetSize(1).forceSplitOnNull();
+		final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).maxCategoricalInSetSize(1)
+				.forceSplitOnNull();
 
 		final Tree tree = tb.buildPredictiveModel(instances);
 		final Node node = tree.node;
@@ -441,8 +439,8 @@ public class TreeBuilderTest {
 		List<Integer> numericColumns = Arrays.asList(0);
 		List<Instance> instances = loadCsvDataset(1,
 				"quickdt/synthetic/basicNumericWithNaNInMajority.csv.gz", numericColumns);
-		final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).smallTrainingSetLimit(2)
-				.maxCategoricalInSetSize(1).forceSplitOnNull();
+		final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).maxCategoricalInSetSize(1)
+				.forceSplitOnNull();
 
 		final Tree tree = tb.buildPredictiveModel(instances);
 		final Node node = tree.node;
@@ -461,8 +459,7 @@ public class TreeBuilderTest {
 		List<Instance> instances = loadCsvDataset(1,
 				"quickdt/synthetic/basicCategoricalWithMissingInMinority.csv.gz");
 		{
-			final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).smallTrainingSetLimit(2)
-					.maxCategoricalInSetSize(1);// .forceSplitOnNull(true);
+			final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).maxCategoricalInSetSize(1);// .forceSplitOnNull(true);
 			final Tree tree = tb.buildPredictiveModel(instances);
 			final Node node = tree.node;
 
@@ -475,8 +472,7 @@ public class TreeBuilderTest {
 		}
 
 		{
-			final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).smallTrainingSetLimit(2)
-					.maxCategoricalInSetSize(1)
+			final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).maxCategoricalInSetSize(1)
 					// forceSplitOnNull should not impact the categorical, because missing values
 					// are represented as "", not null
 					.forceSplitOnNull();
@@ -497,8 +493,7 @@ public class TreeBuilderTest {
 
 		List<Instance> instances = loadCsvDataset(1,
 				"quickdt/synthetic/basicCategoricalWithMissingInMajority.csv.gz");
-		final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).smallTrainingSetLimit(2)
-				.maxCategoricalInSetSize(1)
+		final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).maxCategoricalInSetSize(1)
 				// forceSplitOnNull should not impact the categorical, because missing values
 				// are represented as "", not null
 				.forceSplitOnNull();
@@ -535,8 +530,7 @@ public class TreeBuilderTest {
 		};
 
 		{
-			final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).smallTrainingSetLimit(0)
-					.maxCategoricalInSetSize(1);
+			final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).maxCategoricalInSetSize(1);
 			// .forceSplitOnNull(true);
 
 			final Tree tree = tb.buildPredictiveModel(instances);
@@ -548,8 +542,7 @@ public class TreeBuilderTest {
 		}
 
 		{ // test that splits on null have no effect
-			final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).smallTrainingSetLimit(0)
-					.maxCategoricalInSetSize(1)
+			final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).maxCategoricalInSetSize(1)
 					// allow splits on null has no effect
 					.forceSplitOnNull();
 
@@ -568,8 +561,7 @@ public class TreeBuilderTest {
 		List<Instance> instances = loadCsvDataset(1,
 				"quickdt/synthetic/multiclassNumericWithMissing.csv.gz", numericColumns);
 
-		final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).smallTrainingSetLimit(0)
-				.maxCategoricalInSetSize(3);
+		final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).maxCategoricalInSetSize(3);
 
 		final Tree tree = tb.buildPredictiveModel(instances);
 		final Node node = tree.node;
@@ -590,8 +582,7 @@ public class TreeBuilderTest {
 				"quickdt/synthetic/multiclassNumericWithMissing.csv.gz", numericColumns);
 
 		{
-			final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).smallTrainingSetLimit(0)
-					.maxCategoricalInSetSize(1);
+			final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).maxCategoricalInSetSize(1);
 
 			final Tree tree = tb.buildPredictiveModel(instances);
 			final Node node = tree.node;
@@ -612,8 +603,7 @@ public class TreeBuilderTest {
 				"quickdt/synthetic/multiclassNumericWithMissingInMajority.csv.gz", numericColumns);
 
 		{
-			final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).smallTrainingSetLimit(0)
-					.maxCategoricalInSetSize(2);
+			final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).maxCategoricalInSetSize(2);
 
 			final Tree tree = tb.buildPredictiveModel(instances);
 			final Node node = tree.node;
@@ -625,8 +615,8 @@ public class TreeBuilderTest {
 		}
 
 		{
-			final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).smallTrainingSetLimit(0)
-					.maxCategoricalInSetSize(3).forceSplitOnNull();
+			final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).maxCategoricalInSetSize(3)
+					.forceSplitOnNull();
 
 			final Tree tree = tb.buildPredictiveModel(instances);
 			final Node node = tree.node;
@@ -664,8 +654,7 @@ public class TreeBuilderTest {
 	public void testShowLeafMetrics() {
 		final List<Instance> instances = loadCsvDataset(1,
 				"quickdt/synthetic/basicLargerNumericWithMissing.csv.gz");
-		final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).smallTrainingSetLimit(2)
-				.maxCategoricalInSetSize(2);
+		final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).maxCategoricalInSetSize(2);
 		final Tree tree = tb.buildPredictiveModel(instances);
 		final Node root = tree.node;
 
@@ -679,8 +668,7 @@ public class TreeBuilderTest {
 		List<Integer> numericColumns = Arrays.asList(0);
 		final List<Instance> instances = loadCsvDataset(1,
 				"quickdt/synthetic/basicLargerNumericWithMissing.csv.gz", numericColumns);
-		final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).smallTrainingSetLimit(2)
-				.maxCategoricalInSetSize(2);
+		final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).maxCategoricalInSetSize(2);
 
 		final Tree tree = tb.buildPredictiveModel(instances);
 		final Branch root = (Branch) tree.node;
@@ -703,8 +691,7 @@ public class TreeBuilderTest {
 
 		final List<Instance> instances = loadCsvDataset(1,
 				"quickdt/synthetic/categoricalMixed.csv.gz");
-		final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).smallTrainingSetLimit(2)
-				.maxCategoricalInSetSize(2);
+		final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).maxCategoricalInSetSize(2);
 
 		final Tree tree = tb.buildPredictiveModel(instances);
 		final Branch root = (Branch) tree.node;
@@ -726,8 +713,7 @@ public class TreeBuilderTest {
 
 		final List<Instance> instances = loadCsvDataset(1,
 				"quickdt/synthetic/categoricalMixed2.csv.gz");
-		final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).smallTrainingSetLimit(2)
-				.maxCategoricalInSetSize(2);
+		final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).maxCategoricalInSetSize(2);
 
 		final Tree tree = tb.buildPredictiveModel(instances);
 		final Branch root = (Branch) tree.node;
@@ -748,8 +734,7 @@ public class TreeBuilderTest {
 
 		final List<Instance> instances = loadCsvDataset(1,
 				"quickdt/synthetic/categoricalMulticlassMixed.csv.gz");
-		final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).smallTrainingSetLimit(2)
-				.maxCategoricalInSetSize(2);
+		final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).maxCategoricalInSetSize(2);
 
 		final Tree tree = tb.buildPredictiveModel(instances);
 		final Branch root = (Branch) tree.node;
@@ -806,8 +791,7 @@ public class TreeBuilderTest {
 
 		final List<Instance> instances = loadCsvDataset(1,
 				"quickdt/synthetic/numericMulticlassMixed.csv.gz", numericColumns);
-		final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).smallTrainingSetLimit(2)
-				.maxCategoricalInSetSize(2);
+		final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).maxCategoricalInSetSize(2);
 
 		Tree tree = tb.buildPredictiveModel(instances);
 
@@ -863,8 +847,7 @@ public class TreeBuilderTest {
 
 		final List<Instance> instances = loadCsvDataset(1,
 				"quickdt/synthetic/categoricalMulticlassMixed.csv.gz");
-		final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).smallTrainingSetLimit(2)
-				.maxCategoricalInSetSize(2);
+		final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).maxCategoricalInSetSize(2);
 
 		Tree tree = tb.buildPredictiveModel(instances);
 
@@ -887,8 +870,8 @@ public class TreeBuilderTest {
 
 		final List<Instance> instances = loadCsvDataset(1,
 				"quickdt/synthetic/categoricalMulticlassMixed.csv.gz");
-		final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).smallTrainingSetLimit(2)
-				.maxCategoricalInSetSize(2).maxDepth(0);
+		final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).maxCategoricalInSetSize(2)
+				.maxDepth(0);
 		Tree tree = tb.buildPredictiveModel(instances);
 		assertEquals(1, tree.getLeaves().size());
 		tree = tree.pruneSameCategoryLeaves();
@@ -910,8 +893,8 @@ public class TreeBuilderTest {
 
 		final List<Instance> instances = loadCsvDataset(1,
 				"quickdt/synthetic/categoricalMulticlassMixed.csv.gz");
-		final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).smallTrainingSetLimit(2)
-				.maxCategoricalInSetSize(2).maxDepth(1);
+		final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).maxCategoricalInSetSize(2)
+				.maxDepth(1);
 
 		Tree tree = tb.buildPredictiveModel(instances);
 
@@ -927,14 +910,13 @@ public class TreeBuilderTest {
 		final List<Instance> instances = loadCsvDataset(1,
 				"quickdt/synthetic/categoricalMulticlassMixed.csv.gz");
 		{
-			final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).smallTrainingSetLimit(2)
-					.maxCategoricalInSetSize(2);
+			final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).maxCategoricalInSetSize(2);
 			Tree tree = tb.buildPredictiveModel(instances);
 			assertEquals(8, tree.getLeaves().size());
 		}
 		{
-			final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).smallTrainingSetLimit(2)
-					.maxCategoricalInSetSize(2).pruneSameCategory();
+			final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).maxCategoricalInSetSize(2)
+					.pruneSameCategory();
 			Tree tree = tb.buildPredictiveModel(instances);
 			assertEquals(5, tree.getLeaves().size());
 		}
@@ -956,12 +938,54 @@ public class TreeBuilderTest {
 		final List<Instance> instances = loadCsvDataset(1,
 				"quickdt/synthetic/categoricalSomeCategoriesCannotBeClassified.csv.gz");
 
-		final TreeBuilder tb = new TreeBuilder().smallTrainingSetLimit(2)
-				.maxCategoricalInSetSize(2);
+		final TreeBuilder tb = new TreeBuilder().maxCategoricalInSetSize(2);
 		Tree tree = tb.buildPredictiveModel(instances);
 
 		assertEquals("{0=5.0, 1=5.0, 2=0.0}", tree.getTruePositiveCounts().toString());
 		assertEquals("{0=0.9090909090909091, 1=0.9090909090909091, 2=0.0}",
 				tree.getF1().toString());
+	}
+
+	/**
+	 * Test triggered by an error in the external application, using quickdt
+	 */
+	@Test
+	public void testNumericSplit1() {
+
+		List<Integer> numericColumns = Arrays.asList(1);
+		final List<Instance> instances = loadCsvDataset(0, "quickdt/synthetic/numericSplit1.csv.gz",
+				numericColumns);
+
+		// test with settings used in the external application
+		int minLeafInstances = (int) Math.ceil(0.05 * instances.size());
+		final TreeBuilder tb = new TreeBuilder().forceSplitOnNull().maxCategoricalInSetSize(3)
+				.maxDepth(5).minInstancesPerCategoricalVariable(1)
+				.minLeafInstances(minLeafInstances).pruneSameCategory();
+
+		Tree tree = tb.buildPredictiveModel(instances);
+
+		assertTrue(tree.node instanceof NumericBranch);
+		assertEquals("var > 1.0", tree.node.toString());
+	}
+
+	/**
+	 * Test triggered by an error in the external application, using quickdt
+	 */
+	@Test
+	public void testNumericSplit2() {
+
+		List<Integer> numericColumns = Arrays.asList(0, 1);
+		final List<Instance> instances = loadCsvDataset(2, "quickdt/synthetic/numericSplit2.csv.gz",
+				numericColumns);
+
+		// test with settings used in the external application
+		int minLeafInstances = (int) Math.ceil(0.05 * instances.size());
+		final TreeBuilder tb = new TreeBuilder().forceSplitOnNull().maxCategoricalInSetSize(3)
+				.maxDepth(5).minInstancesPerCategoricalVariable(1)
+				.minLeafInstances(minLeafInstances).pruneSameCategory();
+
+		Tree tree = tb.buildPredictiveModel(instances);
+		assertTrue(tree.node instanceof NumericBranch);
+		assertEquals("CAT2[B] > 1.0", tree.node.toString());
 	}
 }

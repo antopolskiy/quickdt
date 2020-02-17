@@ -50,7 +50,6 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 	private int          maxDepth                           = Integer.MAX_VALUE;
 	private int          maxCategoricalInSetSize            = Integer.MAX_VALUE;
 	private boolean      forceSplitsOnMissing               = false;
-	private int          smallTrainingSetLimit              = 9;
 	private double       minimumScore                       = 0.00000000000001;
 	private int          minInstancesPerCategoricalVariable = 0;
 	private int          minLeafInstances                   = 0;
@@ -130,11 +129,6 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 
 	public TreeBuilder minimumScore(double minimumScore) {
 		this.minimumScore = minimumScore;
-		return this;
-	}
-
-	public TreeBuilder smallTrainingSetLimit(int smallTrainingSetLimit) {
-		this.smallTrainingSetLimit = smallTrainingSetLimit;
 		return this;
 	}
 
@@ -420,7 +414,6 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 		Map<String, AttributeCharacteristics> attributeCharacteristics = surveyTrainingData(
 				trainingData);
 
-		boolean smallTrainingSet = isSmallTrainingSet(trainingData);
 		Pair<? extends Branch, Double> bestPair = null;
 
 		for (final Entry<String, AttributeCharacteristics> attributeCharacteristicsEntry : attributeCharacteristics
@@ -436,10 +429,10 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 			Pair<? extends Branch, Double> numericPair = null;
 			Pair<? extends Branch, Double> categoricalPair = null;
 
-			if (!smallTrainingSet && attributeCharacteristicsEntry.getValue().isNumber) {
+			if (attributeCharacteristicsEntry.getValue().isNumber) {
 				numericPair = createNumericNode(parent, attributeCharacteristicsEntry.getKey(),
 						trainingData, splits.get(attributeCharacteristicsEntry.getKey()));
-			} else if (!attributeCharacteristicsEntry.getValue().isNumber) {
+			} else {
 				categoricalPair = createCategoricalNode(parent,
 						attributeCharacteristicsEntry.getKey(), trainingData);
 			}
@@ -465,19 +458,6 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 			trueWeight += instance.getWeight();
 		}
 		return trueWeight;
-	}
-
-	private boolean isSmallTrainingSet(Iterable<? extends AbstractInstance> trainingData) {
-		boolean smallTrainingSet = true;
-		int tsCount = 0;
-		for (final AbstractInstance abstractInstance : trainingData) {
-			tsCount++;
-			if (tsCount > smallTrainingSetLimit) {
-				smallTrainingSet = false;
-				break;
-			}
-		}
-		return smallTrainingSet;
 	}
 
 	/**
