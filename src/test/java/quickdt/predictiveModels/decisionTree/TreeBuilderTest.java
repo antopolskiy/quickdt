@@ -988,4 +988,28 @@ public class TreeBuilderTest {
 		assertTrue(tree.node instanceof NumericBranch);
 		assertEquals("CAT2[B] > 1.0", tree.node.toString());
 	}
+
+	@Test
+	public void testUniqueIDHandling() {
+		final List<Instance> instances = loadCsvDataset(3, "quickdt/synthetic/unique_id.csv.gz");
+
+		// test with settings used in the external application
+		int minLeafInstances = (int) Math.ceil(0.05 * instances.size());
+		final TreeBuilder tb = new TreeBuilder().forceSplitOnNull().maxCategoricalInSetSize(1)
+				.maxDepth(1).minInstancesPerCategoricalVariable(1)
+				.minLeafInstances(minLeafInstances).pruneSameCategory().setIdAttribute("ID");
+
+		Tree tree = tb.buildPredictiveModel(instances);
+
+		List<Leaf> leaves = tree.getLeaves();
+		assertEquals("{0=3, 1=3}", tb.getIdAttributeHandler().getTotalCounts().toString());
+		for (Leaf leaf : leaves) {
+			assertEquals(Integer.valueOf(3),
+					tb.getIdAttributeHandler().getCountForLeafClass(leaf.hashCode(), "0"));
+
+			assertEquals(Integer.valueOf(3),
+					tb.getIdAttributeHandler().getCountForMajorityClass(leaf));
+		}
+		assertEquals("CAT in [0]", tree.node.toString());
+	}
 }

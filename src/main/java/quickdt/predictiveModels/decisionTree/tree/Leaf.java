@@ -196,4 +196,5 @@ public class Leaf extends Node {
 	Leaf pruneMe() {
 		return parent.collapse(depth - 1);
 	}
+
 }

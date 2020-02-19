@@ -34,6 +34,7 @@ import quickdt.predictiveModels.decisionTree.tree.AttributeValueWithClassificati
 import quickdt.predictiveModels.decisionTree.tree.Branch;
 import quickdt.predictiveModels.decisionTree.tree.CategoricalBranch;
 import quickdt.predictiveModels.decisionTree.tree.ClassificationCounter;
+import quickdt.predictiveModels.decisionTree.tree.IdAttributeHandler;
 import quickdt.predictiveModels.decisionTree.tree.Leaf;
 import quickdt.predictiveModels.decisionTree.tree.Node;
 import quickdt.predictiveModels.decisionTree.tree.NumericBranch;
@@ -45,23 +46,25 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 	public static final int          RESERVOIR_SIZE      = 1000;
 	public static final Serializable MISSING_VALUE       = "%missingVALUE%83257";
 
-	private final Scorer scorer;
-	private double       ignoreAttributeAtNodeProbability   = 0.0;
-	private int          maxDepth                           = Integer.MAX_VALUE;
-	private int          maxCategoricalInSetSize            = Integer.MAX_VALUE;
-	private boolean      forceSplitsOnMissing               = false;
-	private double       minimumScore                       = 0.00000000000001;
-	private int          minInstancesPerCategoricalVariable = 0;
-	private int          minLeafInstances                   = 0;
-	private boolean      updatable                          = false;
-	private boolean      binaryClassifications              = true;
-	private boolean      pruneSameCategory                  = false;
-	private Serializable minorityClassification;
-	private String       splitAttribute                     = null;
-	private Set<String>  splitModelWhiteList;
-	private Serializable id;
-	private Random       random                             = new Random();
-	private double       eps                                = .000001;
+	private final Scorer                      scorer;
+	private double                            ignoreAttributeAtNodeProbability   = 0.0;
+	private int                               maxDepth                           = Integer.MAX_VALUE;
+	private int                               maxCategoricalInSetSize            = Integer.MAX_VALUE;
+	private boolean                           forceSplitsOnMissing               = false;
+	private double                            minimumScore                       = 0.00000000000001;
+	private int                               minInstancesPerCategoricalVariable = 0;
+	private int                               minLeafInstances                   = 0;
+	private boolean                           updatable                          = false;
+	private boolean                           binaryClassifications              = true;
+	private boolean                           pruneSameCategory                  = false;
+	private Serializable                      minorityClassification;
+	private String                            splitAttribute                     = null;
+	private Set<String>                       splitModelWhiteList;
+	private Serializable                      id;
+	private double                            eps                                = .000001;
+	private IdAttributeHandler                idAttributeHandler                 = new IdAttributeHandler();
+	private HashMap<Serializable, MutableInt> classifications                    = Maps
+			.newHashMap();
 
 	public TreeBuilder() {
 		this(new MSEScorer(MSEScorer.CrossValidationCorrection.FALSE));
@@ -142,6 +145,18 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 		return this;
 	}
 
+	/**
+	 * 
+	 * See {@link IdAttributeHandler} for detail.
+	 * 
+	 * @param idAttribute
+	 * @return
+	 */
+	public TreeBuilder setIdAttribute(String idAttribute) {
+		this.idAttributeHandler = new IdAttributeHandler(idAttribute);
+		return this;
+	}
+
 	@Override
 	public TreeBuilder updatable(boolean updatable) {
 		this.updatable = updatable;
@@ -151,6 +166,10 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 	@Override
 	public void setID(Serializable id) {
 		this.id = id;
+	}
+
+	public IdAttributeHandler getIdAttributeHandler() {
+		return idAttributeHandler;
 	}
 
 	@Override
@@ -179,7 +198,6 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 	private void setBinaryClassificationProperties(
 			Iterable<? extends AbstractInstance> trainingData) {
 
-		HashMap<Serializable, MutableInt> classifications = Maps.newHashMap();
 		for (AbstractInstance instance : trainingData) {
 			Serializable classification = instance.getClassification();
 			if (classifications.containsKey(classification)) {
@@ -285,6 +303,11 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 			thisLeaf = new UpdatableLeaf(parent, trainingData, depth);
 		} else {
 			thisLeaf = new Leaf(parent, trainingData, depth);
+		}
+
+		if (idAttributeHandler != null) {
+			idAttributeHandler.countUniqueValues(thisLeaf.hashCode(), trainingData,
+					classifications);
 		}
 
 		if (depth >= maxDepth) {
@@ -418,6 +441,13 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 
 		for (final Entry<String, AttributeCharacteristics> attributeCharacteristicsEntry : attributeCharacteristics
 				.entrySet()) {
+
+			// skip ID attribute (see IdAttributeHandler for details)
+			if (attributeCharacteristicsEntry.getKey()
+					.equals(this.idAttributeHandler.idAttribute)) {
+				continue;
+			}
+
 			if (this.ignoreAttributeAtNodeProbability > 0
 					&& Misc.random.nextDouble() < this.ignoreAttributeAtNodeProbability) {// ||
 																							// attributeCharacteristicsEntry.getKey().equals(splitAttribute))
@@ -980,13 +1010,12 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 				if (value == null) {
 					value = Double.MIN_VALUE;
 				}
-				return ((Number) value).doubleValue() <= threshold; // missing values should go the
-																	// way of the outset. Future
-																	// improvement shoud allow
-																	// missing values to go way of
-																	// either inset or outset
-			} catch (final ClassCastException e) { // Kludge, need to
-				// handle better
+				// missing values should go the way of the outset. Future improvement shoud
+				// allow missing values to go way of either inset or outset
+				return ((Number) value).doubleValue() <= threshold;
+
+				// Kludge, need to handle better
+			} catch (final ClassCastException e) {
 				return false;
 			}
 		}
