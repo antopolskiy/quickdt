@@ -264,3 +264,15 @@ scoring them.
 
 We keep adding to the set until adding a new value results in a lower score than the set has without it.  Once that happens we
 terminate, and that's our set.
+
+**Unique ID attribute**
+
+idAttribute can be specified with `TreeBuilder.setIdAttribute(idAttribute)`. idAttribute is the name of the column which has a special function in the model. idAttribute is not used for classification, i.e. it is exempt from the splits. However, it is used to create special unique ID counts: how many data points with unique IDs are present in the leafs. Count are class-specific, kept separately for each class in each leaf.
+
+To query the counts, use `TreeBuilder.getIdAttributesHandler()` with the following methods:
+
+- `getCountsMap()` to get the map containing counts for each leaf, can be queried with Leaf.hashCode().
+- `getCountForLeaf(Leaf.hashCode())` to get the id counts for specific leaf.
+- `getCountForLeafClass(Leaf.hashCode(), class)` to get the id counts for specific class within specific leaf.
+- `getCountForMajorityClass(Leaf)` to get the id counts for the majority class of the specific leaf.
+- `getTotalCounts()` to get the total id counts for each class.

@@ -14,8 +14,8 @@ import quickdt.data.AbstractInstance;
  * of the column which has special function in the model. idAttribute is not
  * used for classification, i.e. it is exempt from the splits. However, it is
  * used to create special unique ID counts (see
- * {@link #countUniqueValues(int, Iterable, HashMap)} countUniqueValues}: how
- * many data points with unique IDs are present in the leafs.
+ * {@link #countUniqueValues(int, Iterable, Map) countUniqueValues}: how many
+ * data points with unique IDs are present in the leafs.
  */
 public class IdAttributeHandler {
 	/**
