@@ -83,7 +83,7 @@ public abstract class Node implements Serializable {
 	 */
 	public abstract int size();
 
-	public abstract ClassificationCounter getClassificationCounter();
+	public abstract ClassCounter getClassificationCounter();
 
 	/**
 	 *
@@ -97,8 +97,8 @@ public abstract class Node implements Serializable {
 		return getClassificationCounter().getCount(getBestClassification());
 	}
 
-	public double getFalseNegatives(ClassificationCounter treeClassificationCounter) {
-		return treeClassificationCounter.getCount(getBestClassification()) - getTruePositives();
+	public double getFalseNegatives(ClassCounter treeClassCounter) {
+		return treeClassCounter.getCount(getBestClassification()) - getTruePositives();
 	}
 
 	public double getFalsePositives() {

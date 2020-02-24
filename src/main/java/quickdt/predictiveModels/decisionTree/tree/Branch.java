@@ -101,8 +101,8 @@ public abstract class Branch extends Node {
 	}
 
 	@Override
-	public ClassificationCounter getClassificationCounter() {
-		return ClassificationCounter.merge(trueChild.getClassificationCounter(),
+	public ClassCounter getClassificationCounter() {
+		return ClassCounter.merge(trueChild.getClassificationCounter(),
 				falseChild.getClassificationCounter());
 	}
 

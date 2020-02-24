@@ -21,10 +21,6 @@ import quickdt.predictiveModels.UpdatablePredictiveModelBuilder;
 import quickdt.predictiveModels.decisionTree.TreeBuilder;
 import quickdt.predictiveModels.decisionTree.tree.Tree;
 
-/**
- * Created with IntelliJ IDEA. User: ian Date: 4/18/13 Time: 4:18 PM To change
- * this template use File | Settings | File Templates.
- */
 public class RandomForestBuilder implements UpdatablePredictiveModelBuilder<RandomForest> {
 	private static final Logger logger              = LoggerFactory
 			.getLogger(RandomForestBuilder.class);
@@ -111,8 +107,11 @@ public class RandomForestBuilder implements UpdatablePredictiveModelBuilder<Rand
 		List<Future<Tree>> treeFutures = Lists.newArrayListWithCapacity(numTrees);
 		List<Tree> trees = Lists.newArrayListWithCapacity(numTrees);
 
-		// Submit all tree building jobs to the executor
-		for (int treeIndex = 0; treeIndex < numTrees; treeIndex++) {
+		if (randomForest.trees.size() < numTrees) {
+			logger.error("Numbers are not consistent");
+		}
+
+		for (int treeIndex = 0; treeIndex < randomForest.trees.size(); treeIndex++) {
 			Iterable<? extends AbstractInstance> treeTrainingData = shuffleTrainingData(newData);
 			treeFutures.add(submitTreeUpdate(randomForest.trees.get(treeIndex), treeTrainingData,
 					treeIndex, trainingData, splitNodes));
@@ -220,6 +219,10 @@ public class RandomForestBuilder implements UpdatablePredictiveModelBuilder<Rand
 		try {
 			trees.add(treeFuture.get());
 		} catch (Exception e) {
+			// rarely an error happens here, but its origin it unknown; I am fixing it
+			// post-hoc by using the available number of trees instead of the theoretical
+			// (numTrees). It might be that exception is not correctly handled here by the
+			// original developers.
 			logger.error("Error retrieving tree", e);
 		}
 	}

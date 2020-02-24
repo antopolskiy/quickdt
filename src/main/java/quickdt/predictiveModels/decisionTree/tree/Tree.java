@@ -22,12 +22,12 @@ import quickdt.predictiveModels.PredictiveModel;
 public class Tree implements PredictiveModel {
 	static final long serialVersionUID = 56394564395635672L;
 
-	public final Node             node;
-	private ClassificationCounter classificationCounter;
+	public final Node    node;
+	private ClassCounter classCounter;
 
 	public Tree(Node tree) {
 		this.node = tree;
-		classificationCounter = node.getClassificationCounter();
+		classCounter = node.getClassificationCounter();
 	}
 
 	@Override
@@ -36,8 +36,8 @@ public class Tree implements PredictiveModel {
 		return leaf.getProbability(classification);
 	}
 
-	public ClassificationCounter getClassificationCounter() {
-		return classificationCounter;
+	public ClassCounter getClassCounter() {
+		return classCounter;
 	}
 
 	/**
@@ -105,7 +105,7 @@ public class Tree implements PredictiveModel {
 	}
 
 	private Set<Serializable> getTargets() {
-		return classificationCounter.allClassifications();
+		return classCounter.allClassifications();
 	}
 
 	public int getMaxDepth() {

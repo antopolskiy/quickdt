@@ -3,7 +3,6 @@ package quickdt.predictiveModels.decisionTree.tree;
 import static quickdt.predictiveModels.decisionTree.TreeBuilder.MISSING_VALUE;
 
 import java.io.Serializable;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -18,12 +17,12 @@ import com.google.common.collect.Maps;
 import quickdt.collections.ValueSummingMap;
 import quickdt.data.AbstractInstance;
 
-public class ClassificationCounter implements Serializable {
+public class ClassCounter implements Serializable {
 	private static final long                   serialVersionUID = -6821237234748044623L;
 	private final ValueSummingMap<Serializable> counts           = new ValueSummingMap<Serializable>();
 
-	public static ClassificationCounter merge(ClassificationCounter a, ClassificationCounter b) {
-		ClassificationCounter newCC = new ClassificationCounter();
+	public static ClassCounter merge(ClassCounter a, ClassCounter b) {
+		ClassCounter newCC = new ClassCounter();
 		newCC.counts.putAll(a.counts);
 		for (Entry<Serializable, Number> e : b.counts.entrySet()) {
 			newCC.counts.addToValue(e.getKey(), e.getValue().doubleValue());
@@ -31,14 +30,14 @@ public class ClassificationCounter implements Serializable {
 		return newCC;
 	}
 
-	public static Pair<ClassificationCounter, Map<Serializable, ClassificationCounter>> countAllByAttributeValues(
+	public static Pair<ClassCounter, Map<Serializable, ClassCounter>> countAllByAttributeValues(
 			final Iterable<? extends AbstractInstance> instances, final String attribute,
 			String splitAttribute, Serializable splitAttributeValue) {
-		final Map<Serializable, ClassificationCounter> result = Maps.newHashMap();
-		final ClassificationCounter totals = new ClassificationCounter();
+		final Map<Serializable, ClassCounter> result = Maps.newHashMap();
+		final ClassCounter totals = new ClassCounter();
 		for (final AbstractInstance instance : instances) {
 			final Serializable attrVal = instance.getAttributes().get(attribute);
-			ClassificationCounter cc = null;
+			ClassCounter cc = null;
 			boolean acceptableMissingValue = attrVal == null
 					&& isAnAcceptableMissingValue(instance, splitAttribute, splitAttributeValue);
 
@@ -52,7 +51,7 @@ public class ClassificationCounter implements Serializable {
 			}
 
 			if (cc == null) {
-				cc = new ClassificationCounter();
+				cc = new ClassCounter();
 				Serializable newKey = (attrVal != null) ? attrVal : MISSING_VALUE;
 				result.put(newKey, cc);
 			}
@@ -65,36 +64,47 @@ public class ClassificationCounter implements Serializable {
 
 	/**
 	 * Attributes with more skewed target counts come out first
-	 * 
-	 * @param instances
-	 * @param attribute
-	 * @param splitAttribute
-	 * @param splitAttributeValue
-	 * @param minorityClassification
-	 * @return
 	 */
-	public static Pair<ClassificationCounter, List<AttributeValueWithClassificationCounter>> getSortedListOfAttributeValuesWithClassificationCounters(
+	public static Pair<ClassCounter, List<AttrValClassCounter>> getSortedListOfAttrValuesWithClassCounters(
 			final Iterable<? extends AbstractInstance> instances, final String attribute,
 			String splitAttribute, Serializable splitAttributeValue,
 			final Serializable minorityClassification) {
 
-		Pair<ClassificationCounter, Map<Serializable, ClassificationCounter>> totalsClassificationCounterPairedWithMapofClassificationCounters = countAllByAttributeValues(
+		final Pair<ClassCounter, Map<Serializable, ClassCounter>> pair = countAllByAttributeValues(
 				instances, attribute, splitAttribute, splitAttributeValue);
-		final Map<Serializable, ClassificationCounter> result = totalsClassificationCounterPairedWithMapofClassificationCounters
-				.getValue1();
-		final ClassificationCounter totals = totalsClassificationCounterPairedWithMapofClassificationCounters
-				.getValue0();
+		final ClassCounter totalCounter = pair.getValue0();
+		final Map<Serializable, ClassCounter> attrValCounters = pair.getValue1();
 
-		List<AttributeValueWithClassificationCounter> attributesWithClassificationCounters = Lists
-				.newArrayList();
-		for (Serializable key : result.keySet()) {
+		List<AttrValClassCounter> attrWithClassCounters = toSortedListOfValueClassCounters(
+				attrValCounters, new MinorityProportionAndSizeComparator(minorityClassification));
+
+		return Pair.with(totalCounter, attrWithClassCounters);
+	}
+
+	/**
+	 * Given a map of attribute values to classification counters, and a comparator,
+	 * produces a sorted list of AttrValueClassCounters. They contain the same
+	 * information, packaged.
+	 * 
+	 * This sorted list can be used later by categorical branching algorithm to pick
+	 * categorical values for optimal splits.
+	 * 
+	 * @param attrValCounters Map attribute value -> Classification Counter for that
+	 *                        value
+	 * @param comparator      Used to sort the list. E.g. see
+	 *                        {@link MinorityProportionAndSizeComparator
+	 *                        MinorityProportionAndSizeComparator}
+	 * @return
+	 */
+	private static List<AttrValClassCounter> toSortedListOfValueClassCounters(
+			Map<Serializable, ClassCounter> attrValCounters, Comparator comparator) {
+		List<AttrValClassCounter> attributesWithClassificationCounters = Lists.newArrayList();
+		for (Entry<Serializable, ClassCounter> entry : attrValCounters.entrySet()) {
 			attributesWithClassificationCounters
-					.add(new AttributeValueWithClassificationCounter(key, result.get(key)));
+					.add(new AttrValClassCounter(entry.getKey(), entry.getValue()));
 		}
-		Collections.sort(attributesWithClassificationCounters,
-				new MinorityProportionAndSizeComparator(minorityClassification));
-
-		return Pair.with(totals, attributesWithClassificationCounters);
+		attributesWithClassificationCounters.sort(comparator);
+		return attributesWithClassificationCounters;
 	}
 
 	private static boolean isAnAcceptableMissingValue(AbstractInstance instance,
@@ -112,9 +122,8 @@ public class ClassificationCounter implements Serializable {
 		return ret;
 	}
 
-	public static ClassificationCounter countAll(
-			final Iterable<? extends AbstractInstance> instances) {
-		final ClassificationCounter result = new ClassificationCounter();
+	public static ClassCounter countAll(final Iterable<? extends AbstractInstance> instances) {
+		final ClassCounter result = new ClassCounter();
 		for (final AbstractInstance instance : instances) {
 			result.addClassification(instance.getClassification(), instance.getWeight());
 		}
@@ -138,8 +147,8 @@ public class ClassificationCounter implements Serializable {
 		return counts.keySet();
 	}
 
-	public ClassificationCounter add(final ClassificationCounter other) {
-		final ClassificationCounter result = new ClassificationCounter();
+	public ClassCounter add(final ClassCounter other) {
+		final ClassCounter result = new ClassCounter();
 		result.counts.putAll(counts);
 		for (final Entry<Serializable, Number> e : other.counts.entrySet()) {
 			result.counts.addToValue(e.getKey(), e.getValue().doubleValue());
@@ -147,8 +156,8 @@ public class ClassificationCounter implements Serializable {
 		return result;
 	}
 
-	public ClassificationCounter subtract(final ClassificationCounter other) {
-		final ClassificationCounter result = new ClassificationCounter();
+	public ClassCounter subtract(final ClassCounter other) {
+		final ClassCounter result = new ClassCounter();
 		result.counts.putAll(counts);
 		for (final Entry<Serializable, Number> e : other.counts.entrySet()) {
 			result.counts.addToValue(e.getKey(), -other.getCount(e.getKey()));
@@ -179,7 +188,7 @@ public class ClassificationCounter implements Serializable {
 			return false;
 		}
 
-		ClassificationCounter that = (ClassificationCounter) o;
+		ClassCounter that = (ClassCounter) o;
 
 		if (!counts.equals(that.counts)) {
 			return false;
@@ -193,8 +202,7 @@ public class ClassificationCounter implements Serializable {
 		return counts.hashCode();
 	}
 
-	private static class MinorityProportionComparator
-			implements Comparator<AttributeValueWithClassificationCounter> {
+	private static class MinorityProportionComparator implements Comparator<AttrValClassCounter> {
 
 		Serializable minorityClassification;
 
@@ -203,19 +211,18 @@ public class ClassificationCounter implements Serializable {
 		}
 
 		@Override
-		public int compare(AttributeValueWithClassificationCounter cc1,
-				AttributeValueWithClassificationCounter cc2) {
-			double p1 = cc1.classificationCounter.getCount(minorityClassification)
-					/ cc1.classificationCounter.getTotal();
-			double p2 = cc2.classificationCounter.getCount(minorityClassification)
-					/ cc2.classificationCounter.getTotal();
+		public int compare(AttrValClassCounter cc1, AttrValClassCounter cc2) {
+			double p1 = cc1.classCounter.getCount(minorityClassification)
+					/ cc1.classCounter.getTotal();
+			double p2 = cc2.classCounter.getCount(minorityClassification)
+					/ cc2.classCounter.getTotal();
 
 			return (int) Math.signum(p2 - p1);
 		}
 	}
 
 	private static class MinorityProportionAndSizeComparator
-			implements Comparator<AttributeValueWithClassificationCounter> {
+			implements Comparator<AttrValClassCounter> {
 
 		Serializable minorityClassification;
 
@@ -224,12 +231,11 @@ public class ClassificationCounter implements Serializable {
 		}
 
 		@Override
-		public int compare(AttributeValueWithClassificationCounter cc1,
-				AttributeValueWithClassificationCounter cc2) {
-			double cc1Total = cc1.classificationCounter.getTotal();
-			double p1 = cc1.classificationCounter.getCount(minorityClassification) / cc1Total;
-			double cc2Total = cc2.classificationCounter.getTotal();
-			double p2 = cc2.classificationCounter.getCount(minorityClassification) / cc2Total;
+		public int compare(AttrValClassCounter cc1, AttrValClassCounter cc2) {
+			double cc1Total = cc1.classCounter.getTotal();
+			double p1 = cc1.classCounter.getCount(minorityClassification) / cc1Total;
+			double cc2Total = cc2.classCounter.getTotal();
+			double p2 = cc2.classCounter.getCount(minorityClassification) / cc2Total;
 
 			int signum = (int) Math.signum(p2 - p1);
 			return signum == 0 ? (int) Math.signum(cc2Total - cc1Total) : signum;

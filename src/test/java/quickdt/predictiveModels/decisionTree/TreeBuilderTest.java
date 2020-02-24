@@ -760,17 +760,17 @@ public class TreeBuilderTest {
 
 		Map<Serializable, Map<Serializable, Double>> falsePositiveDistribution = tree
 				.getFalsePositiveDistribution();
-		assertEquals(tree.getClassificationCounter().allClassifications().size(),
+		assertEquals(tree.getClassCounter().allClassifications().size(),
 				falsePositiveDistribution.size());
-		for (Serializable next : tree.getClassificationCounter().allClassifications()) {
+		for (Serializable next : tree.getClassCounter().allClassifications()) {
 			assertFalse(falsePositiveDistribution.get(next).containsKey(next));
 		}
 
 		Map<Serializable, Map<Serializable, Double>> falseNegativeDistribution = tree
 				.getFalseNegativeDistribution();
-		assertEquals(tree.getClassificationCounter().allClassifications().size(),
+		assertEquals(tree.getClassCounter().allClassifications().size(),
 				falseNegativeDistribution.size());
-		for (Serializable next : tree.getClassificationCounter().allClassifications()) {
+		for (Serializable next : tree.getClassCounter().allClassifications()) {
 			assertFalse(falseNegativeDistribution.get(next).containsKey(next));
 		}
 
@@ -817,17 +817,17 @@ public class TreeBuilderTest {
 
 		Map<Serializable, Map<Serializable, Double>> falsePositiveDistribution = tree
 				.getFalsePositiveDistribution();
-		assertEquals(tree.getClassificationCounter().allClassifications().size(),
+		assertEquals(tree.getClassCounter().allClassifications().size(),
 				falsePositiveDistribution.size());
-		for (Serializable next : tree.getClassificationCounter().allClassifications()) {
+		for (Serializable next : tree.getClassCounter().allClassifications()) {
 			assertFalse(falsePositiveDistribution.get(next).containsKey(next));
 		}
 
 		Map<Serializable, Map<Serializable, Double>> falseNegativeDistribution = tree
 				.getFalseNegativeDistribution();
-		assertEquals(tree.getClassificationCounter().allClassifications().size(),
+		assertEquals(tree.getClassCounter().allClassifications().size(),
 				falseNegativeDistribution.size());
-		for (Serializable next : tree.getClassificationCounter().allClassifications()) {
+		for (Serializable next : tree.getClassCounter().allClassifications()) {
 			assertFalse(falseNegativeDistribution.get(next).containsKey(next));
 		}
 
@@ -1011,5 +1011,34 @@ public class TreeBuilderTest {
 					tb.getIdAttributeHandler().getCountForMajorityClass(leaf));
 		}
 		assertEquals("CAT in [0]", tree.node.toString());
+	}
+
+	@Test
+	public void testIgnoreMissing() {
+		final List<Instance> instances = loadCsvDataset(1,
+				"quickdt/synthetic/basicCategoricalWithMissingInMinority.csv.gz");
+		{
+			// test with settings used in the external application
+			int minLeafInstances = (int) Math.ceil(0.05 * instances.size());
+			final TreeBuilder tb = new TreeBuilder().forceSplitOnNull().maxCategoricalInSetSize(1)
+					.maxDepth(1).minInstancesPerCategoricalVariable(1)
+					.minLeafInstances(minLeafInstances).pruneSameCategory();
+
+			Tree tree = tb.buildPredictiveModel(instances);
+
+			assertEquals("CAT in []", tree.node.toString());
+		}
+
+		{
+			// test with settings used in the external application
+			int minLeafInstances = (int) Math.ceil(0.05 * instances.size());
+			final TreeBuilder tb = new TreeBuilder().forceSplitOnNull().maxCategoricalInSetSize(1)
+					.maxDepth(1).minInstancesPerCategoricalVariable(1)
+					.minLeafInstances(minLeafInstances).pruneSameCategory().ignoreEmptyStrings();
+
+			Tree tree = tb.buildPredictiveModel(instances);
+
+			assertEquals("CAT in [E]", tree.node.toString());
+		}
 	}
 }

@@ -37,16 +37,16 @@ public class Leaf extends Node {
 	/**
 	 * The actual getBestClassification counts
 	 */
-	public final ClassificationCounter classificationCounts;
+	public final ClassCounter classificationCounts;
 
 	public Leaf(Branch parent, final Iterable<? extends AbstractInstance> instances,
 			final int depth) {
-		this(parent, ClassificationCounter.countAll(instances), depth);
+		this(parent, ClassCounter.countAll(instances), depth);
 		Preconditions.checkArgument(!Iterables.isEmpty(instances),
 				"Can't create leaf with no instances");
 	}
 
-	public Leaf(Branch parent, final ClassificationCounter classificationCounts, final int depth) {
+	public Leaf(Branch parent, final ClassCounter classificationCounts, final int depth) {
 		super(parent);
 		guid = guidCounter.incrementAndGet();
 		this.classificationCounts = classificationCounts;
@@ -57,7 +57,7 @@ public class Leaf extends Node {
 	}
 
 	@Override
-	public ClassificationCounter getClassificationCounter() {
+	public ClassCounter getClassificationCounter() {
 		return classificationCounts;
 	}
 
