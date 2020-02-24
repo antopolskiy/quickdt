@@ -20,14 +20,18 @@ import quickdt.predictiveModels.decisionTree.tree.ClassCounter;
 public class IgnoredValuesHandler {
 	private final ClassCounter       counter;
 	private final List<Serializable> values;
+	public final boolean             skip;
+	private boolean                  flipped = false;
 
 	public IgnoredValuesHandler(List<Serializable> ignoredValues,
 			List<AttrValClassCounter> attrValClassCounters) {
 		values = ignoredValues;
 		if (values.isEmpty()) {
 			counter = new ClassCounter();
+			skip = true;
 		} else {
 			counter = getCount(attrValClassCounters);
+			skip = false;
 		}
 	}
 
@@ -53,5 +57,13 @@ public class IgnoredValuesHandler {
 				.stream().filter(c -> !values.contains(c.attrValue)).collect(Collectors.toList());
 
 		return Pair.with(valueOutcomeCountsPairs.getValue0(), attrValClassCounters);
+	}
+
+	public void nowFlipped() {
+		flipped = true;
+	}
+
+	public boolean isFlipped() {
+		return flipped;
 	}
 }

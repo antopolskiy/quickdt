@@ -7,6 +7,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 
 import org.javatuples.Pair;
@@ -19,7 +20,7 @@ import quickdt.data.AbstractInstance;
 
 public class ClassCounter implements Serializable {
 	private static final long                   serialVersionUID = -6821237234748044623L;
-	private final ValueSummingMap<Serializable> counts           = new ValueSummingMap<Serializable>();
+	private final ValueSummingMap<Serializable> counts           = new ValueSummingMap<>();
 
 	public static ClassCounter merge(ClassCounter a, ClassCounter b) {
 		ClassCounter newCC = new ClassCounter();
@@ -27,6 +28,7 @@ public class ClassCounter implements Serializable {
 		for (Entry<Serializable, Number> e : b.counts.entrySet()) {
 			newCC.counts.addToValue(e.getKey(), e.getValue().doubleValue());
 		}
+		checkCounts(newCC.counts);
 		return newCC;
 	}
 
@@ -37,7 +39,7 @@ public class ClassCounter implements Serializable {
 		final ClassCounter totals = new ClassCounter();
 		for (final AbstractInstance instance : instances) {
 			final Serializable attrVal = instance.getAttributes().get(attribute);
-			ClassCounter cc = null;
+			ClassCounter cc;
 			boolean acceptableMissingValue = attrVal == null
 					&& isAnAcceptableMissingValue(instance, splitAttribute, splitAttributeValue);
 
@@ -94,7 +96,6 @@ public class ClassCounter implements Serializable {
 	 * @param comparator      Used to sort the list. E.g. see
 	 *                        {@link MinorityProportionAndSizeComparator
 	 *                        MinorityProportionAndSizeComparator}
-	 * @return
 	 */
 	private static List<AttrValClassCounter> toSortedListOfValueClassCounters(
 			Map<Serializable, ClassCounter> attrValCounters, Comparator comparator) {
@@ -153,7 +154,14 @@ public class ClassCounter implements Serializable {
 		for (final Entry<Serializable, Number> e : other.counts.entrySet()) {
 			result.counts.addToValue(e.getKey(), e.getValue().doubleValue());
 		}
+		checkCounts(result.counts);
 		return result;
+	}
+
+	private static void checkCounts(ValueSummingMap<Serializable> counts) {
+		if (counts.entrySet().stream().anyMatch(c -> c.getValue().longValue() < 0L)) {
+			throw new RuntimeException("Regression test: counters should never go below 0.");
+		}
 	}
 
 	public ClassCounter subtract(final ClassCounter other) {
@@ -162,6 +170,7 @@ public class ClassCounter implements Serializable {
 		for (final Entry<Serializable, Number> e : other.counts.entrySet()) {
 			result.counts.addToValue(e.getKey(), -other.getCount(e.getKey()));
 		}
+		checkCounts(result.counts);
 		return result;
 	}
 
@@ -169,6 +178,10 @@ public class ClassCounter implements Serializable {
 		return counts.getSumOfValues();
 	}
 
+	/**
+	 * @deprecated Will be removed in 0.2.3
+	 */
+	@Deprecated
 	public Pair<Serializable, Double> mostPopular() {
 		Entry<Serializable, Number> best = null;
 		for (final Entry<Serializable, Number> e : counts.entrySet()) {
@@ -176,7 +189,7 @@ public class ClassCounter implements Serializable {
 				best = e;
 			}
 		}
-		return Pair.with(best.getKey(), best.getValue().doubleValue());
+		return Pair.with(Objects.requireNonNull(best).getKey(), best.getValue().doubleValue());
 	}
 
 	@Override
@@ -190,11 +203,7 @@ public class ClassCounter implements Serializable {
 
 		ClassCounter that = (ClassCounter) o;
 
-		if (!counts.equals(that.counts)) {
-			return false;
-		}
-
-		return true;
+		return counts.equals(that.counts);
 	}
 
 	@Override
@@ -202,6 +211,10 @@ public class ClassCounter implements Serializable {
 		return counts.hashCode();
 	}
 
+	/**
+	 * @deprecated Can be removed in 0.2.3
+	 */
+	@Deprecated
 	private static class MinorityProportionComparator implements Comparator<AttrValClassCounter> {
 
 		Serializable minorityClassification;
@@ -226,7 +239,7 @@ public class ClassCounter implements Serializable {
 
 		Serializable minorityClassification;
 
-		public MinorityProportionAndSizeComparator(Serializable minorityClassification) {
+		MinorityProportionAndSizeComparator(Serializable minorityClassification) {
 			this.minorityClassification = minorityClassification;
 		}
 

@@ -42,8 +42,8 @@ import quickdt.predictiveModels.decisionTree.tree.Tree;
 import quickdt.predictiveModels.decisionTree.tree.UpdatableLeaf;
 
 public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> {
-	public static final int          ORDINAL_TEST_SPLITS = 5;
-	public static final int          RESERVOIR_SIZE      = 1000;
+	private static final int         ORDINAL_TEST_SPLITS = 5;
+	private static final int         RESERVOIR_SIZE      = 1000;
 	public static final Serializable MISSING_VALUE       = "%missingVALUE%83257";
 
 	private final Scorer                      scorer;
@@ -136,8 +136,6 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 
 	/**
 	 * After training the model, prune the leaves with the same majority category.
-	 * 
-	 * @return
 	 */
 	public TreeBuilder pruneSameCategory() {
 		this.pruneSameCategory = true;
@@ -145,11 +143,7 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 	}
 
 	/**
-	 * 
 	 * See {@link IdAttributeHandler} for detail.
-	 * 
-	 * @param idAttribute
-	 * @return
 	 */
 	public TreeBuilder setIdAttribute(String idAttribute) {
 		this.idAttributeHandler = new IdAttributeHandler(idAttribute);
@@ -228,11 +222,12 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 
 		minorityClassification = null;
 		double minorityClassificationCount = 0;
-		for (Serializable val : classifications.keySet()) {
+
+		for (Entry<Serializable, MutableInt> entry : classifications.entrySet()) {
 			if (minorityClassification == null
-					|| classifications.get(val).doubleValue() < minorityClassificationCount) {
-				minorityClassification = val;
-				minorityClassificationCount = classifications.get(val).doubleValue();
+					|| entry.getValue().doubleValue() < minorityClassificationCount) {
+				minorityClassification = entry.getKey();
+				minorityClassificationCount = entry.getValue().doubleValue();
 			}
 		}
 	}
@@ -319,7 +314,7 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 			thisLeaf = new Leaf(parent, trainingData, depth);
 		}
 
-		if (idAttributeHandler != null) {
+		if (idAttributeHandler.idAttribute != null) {
 			idAttributeHandler.countUniqueValues(thisLeaf.hashCode(), trainingData,
 					classifications);
 		}
@@ -362,7 +357,7 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 
 		double[] oldSplit = null;
 		// Temporarily replace the split for an attribute for
-		// descendants of an numeric branch, first the trueTrainingSet split;
+		// descendants of an numeric branch, first the trueTrainingSet split.
 		// this is done to avoid copying the splits map at each iteration of the
 		// recursive call. instead it is temporarily changed for the subtree, and then
 		// recovered in the end to keep it consistent with the next calls, once the
@@ -625,8 +620,10 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 
 			// handle ignored values: they need to be flipped from the outset to inset when
 			// outset becomes smaller, see IgnoredValuesHandler javadoc for details.
-			if (!this.ignoredValues.isEmpty() && outSetSize < inSetSize) {
+			if (!ignoredValuesHandler.skip && !ignoredValuesHandler.isFlipped()
+					&& outSetSize < inSetSize) {
 				inOutCounts.moveOutToIn(ignoredValuesHandler.getCounter());
+				ignoredValuesHandler.nowFlipped();
 			}
 
 			inOutCounts.moveOutToIn(valClassCounts);

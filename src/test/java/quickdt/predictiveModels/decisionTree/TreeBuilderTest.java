@@ -1041,4 +1041,110 @@ public class TreeBuilderTest {
 			assertEquals("CAT in [E]", tree.node.toString());
 		}
 	}
+
+	@Test
+	public void testBasicCategoricalWithMissingInMajorityIgnore() {
+
+		List<Instance> instances = loadCsvDataset(1,
+				"quickdt/synthetic/basicCategoricalWithMissingInMajority.csv.gz");
+
+		{
+			final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).maxCategoricalInSetSize(1)
+					// ignoreEmptyString
+					.forceSplitOnNull().ignoreEmptyStrings();
+
+			final Tree tree = tb.buildPredictiveModel(instances);
+			final Node node = tree.node;
+			assertTrue(node instanceof CategoricalBranch);
+			CategoricalBranch branch = (CategoricalBranch) node;
+			assertEquals(1, branch.inSet.size());
+			assertTrue(branch.inSet.contains("A"));
+		}
+		{
+			final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).maxCategoricalInSetSize(1)
+					// try ignoreValue
+					.forceSplitOnNull().ignoreValue("");
+
+			final Tree tree = tb.buildPredictiveModel(instances);
+			final Node node = tree.node;
+			assertTrue(node instanceof CategoricalBranch);
+			CategoricalBranch branch = (CategoricalBranch) node;
+			assertEquals(1, branch.inSet.size());
+			assertTrue(branch.inSet.contains("A"));
+		}
+		{
+			final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).maxCategoricalInSetSize(1)
+					// try doubling the values
+					.forceSplitOnNull().ignoreValue("").ignoreValue("");
+
+			final Tree tree = tb.buildPredictiveModel(instances);
+			final Node node = tree.node;
+			assertTrue(node instanceof CategoricalBranch);
+			CategoricalBranch branch = (CategoricalBranch) node;
+			assertEquals(1, branch.inSet.size());
+			assertTrue(branch.inSet.contains("A"));
+		}
+		{
+			final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).maxCategoricalInSetSize(1)
+					// try doubling the values
+					.forceSplitOnNull().ignoreValues(Arrays.asList("", ""));
+
+			final Tree tree = tb.buildPredictiveModel(instances);
+			final Node node = tree.node;
+			assertTrue(node instanceof CategoricalBranch);
+			CategoricalBranch branch = (CategoricalBranch) node;
+			assertEquals(1, branch.inSet.size());
+			assertTrue(branch.inSet.contains("A"));
+		}
+		{
+			final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).maxCategoricalInSetSize(1)
+					// forbid the best value
+					.forceSplitOnNull().ignoreValues(Arrays.asList("A"));
+
+			final Tree tree = tb.buildPredictiveModel(instances);
+			final Node node = tree.node;
+			assertTrue(node instanceof CategoricalBranch);
+			CategoricalBranch branch = (CategoricalBranch) node;
+			assertEquals(1, branch.inSet.size());
+			assertTrue(branch.inSet.contains("B"));
+			assertEquals("[CAT in [B]->\n" + "0=1.0 (matches=1.0; contaminations=0.0)\n"
+					+ ", CAT in [C]->CAT not in [B]->\n"
+					+ "0=1.0 (matches=1.0; contaminations=0.0)\n"
+					+ ", CAT in [D]->CAT not in [C]->CAT not in [B]->\n"
+					+ "0=1.0 (matches=1.0; contaminations=0.0)\n"
+					+ ", CAT in []->CAT not in [D]->CAT not in [C]->CAT not in [B]->\n"
+					+ "1=1.0 (matches=3.0; contaminations=0.0)\n"
+					+ ", CAT in [E]->CAT not in []->CAT not in [D]->CAT not in [C]->CAT not in [B]->\n"
+					+ "1=1.0 (matches=1.0; contaminations=0.0)\n"
+					+ ", CAT in [F]->CAT not in [E]->CAT not in []->CAT not in [D]->CAT not in [C]->CAT not in [B]->\n"
+					+ "1=1.0 (matches=1.0; contaminations=0.0)\n"
+					+ ", CAT not in [F]->CAT not in [E]->CAT not in []->CAT not in [D]->CAT not in [C]->CAT not in [B]->\n"
+					+ "0=0.5 (matches=1.0; contaminations=1.0)\n"
+					+ "1=0.5 (matches=1.0; contaminations=1.0)\n" + "]",
+					tree.getLeaves().toString());
+		}
+		{
+			final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).maxCategoricalInSetSize(1)
+					// forbid all good values
+					.forceSplitOnNull().ignoreValues(Arrays.asList("A", "B", "C", "D"));
+
+			final Tree tree = tb.buildPredictiveModel(instances);
+			final Node node = tree.node;
+			assertTrue(node instanceof CategoricalBranch);
+			CategoricalBranch branch = (CategoricalBranch) node;
+			assertEquals(1, branch.inSet.size());
+			assertTrue(branch.inSet.contains(""));
+
+			assertEquals(
+					"[CAT in []->\n" + "1=1.0 (matches=3.0; contaminations=0.0)\n"
+							+ ", CAT in [E]->CAT not in []->\n"
+							+ "1=1.0 (matches=1.0; contaminations=0.0)\n"
+							+ ", CAT in [F]->CAT not in [E]->CAT not in []->\n"
+							+ "1=1.0 (matches=1.0; contaminations=0.0)\n"
+							+ ", CAT not in [F]->CAT not in [E]->CAT not in []->\n"
+							+ "0=0.8 (matches=4.0; contaminations=1.0)\n"
+							+ "1=0.2 (matches=4.0; contaminations=1.0)\n" + "]",
+					tree.getLeaves().toString());
+		}
+	}
 }
