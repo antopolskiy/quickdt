@@ -1147,4 +1147,19 @@ public class TreeBuilderTest {
 					tree.getLeaves().toString());
 		}
 	}
+
+	@Test
+	public void testTreatNumericAsCategorical() {
+		final List<Instance> instances = loadCsvDataset(1,
+				"quickdt/synthetic/basicMultipleSplitNumeric.csv.gz", Arrays.asList(0));
+		final TreeBuilder tb = new TreeBuilder().minimumScore(1e-12).treatNumericAsCategorical();
+		final Tree tree = tb.buildPredictiveModel(instances);
+		final Node node = tree.node;
+
+		assertEquals(
+				"[NUM in [4.0, 5.0, 3.0]->\n" + "1=1.0 (matches=3.0; contaminations=0.0)\n"
+						+ ", NUM not in [4.0, 5.0, 3.0]->\n"
+						+ "0=1.0 (matches=6.0; contaminations=0.0)\n" + "]",
+				tree.getLeaves().toString());
+	}
 }

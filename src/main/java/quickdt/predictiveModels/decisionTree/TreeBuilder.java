@@ -47,21 +47,22 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 	public static final Serializable MISSING_VALUE       = "%missingVALUE%83257";
 
 	private final Scorer                      scorer;
-	private double                            ignoreAttributeAtNodeProbability   = 0.0;
 	private int                               maxDepth                           = Integer.MAX_VALUE;
 	private int                               maxCategoricalInSetSize            = Integer.MAX_VALUE;
-	private boolean                           forceSplitsOnMissing               = false;
-	private double                            minimumScore                       = 0.00000000000001;
 	private int                               minInstancesPerCategoricalVariable = 0;
 	private int                               minLeafInstances                   = 0;
 	private boolean                           updatable                          = false;
+	private boolean                           forceSplitsOnMissing               = false;
 	private boolean                           binaryClassifications              = true;
 	private boolean                           pruneSameCategory                  = false;
+	private boolean                           treatNumericAsCategorical          = false;
+	private double                            minimumScore                       = 0.00000000000001;
+	private double                            ignoreAttributeAtNodeProbability   = 0.0;
+	private double                            eps                                = .000001;
 	private Serializable                      minorityClassification;
 	private String                            splitAttribute                     = null;
 	private Set<String>                       splitModelWhiteList;
 	private Serializable                      id;
-	private double                            eps                                = .000001;
 	private IdAttributeHandler                idAttributeHandler                 = new IdAttributeHandler();
 	private HashMap<Serializable, MutableInt> classifications                    = Maps
 			.newHashMap();
@@ -168,6 +169,11 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 
 	public TreeBuilder ignoreValues(List<Serializable> values) {
 		this.ignoredValues.addAll(values);
+		return this;
+	}
+
+	public TreeBuilder treatNumericAsCategorical() {
+		this.treatNumericAsCategorical = true;
 		return this;
 	}
 
@@ -519,7 +525,7 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 					attributeCharacteristic = new AttributeCharacteristics();
 					attributeCharacteristics.put(e.getKey(), attributeCharacteristic);
 				}
-				if (!(e.getValue() instanceof Number)) {
+				if (treatNumericAsCategorical || !(e.getValue() instanceof Number)) {
 					attributeCharacteristic.isNumber = false;
 				}
 			}
