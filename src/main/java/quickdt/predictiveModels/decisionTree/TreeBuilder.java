@@ -42,15 +42,15 @@ import quickdt.predictiveModels.decisionTree.tree.Tree;
 import quickdt.predictiveModels.decisionTree.tree.UpdatableLeaf;
 
 public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> {
-	private static final int         ORDINAL_TEST_SPLITS = 5;
-	private static final int         RESERVOIR_SIZE      = 1000;
-	public static final Serializable MISSING_VALUE       = "%missingVALUE%83257";
+	private static final int         RESERVOIR_SIZE = 1000;
+	public static final Serializable MISSING_VALUE  = "%missingVALUE%83257";
 
 	private final Scorer                      scorer;
 	private int                               maxDepth                           = Integer.MAX_VALUE;
 	private int                               maxCategoricalInSetSize            = Integer.MAX_VALUE;
 	private int                               minInstancesPerCategoricalVariable = 0;
 	private int                               minLeafInstances                   = 0;
+	private int                               numericTestSplits                  = 5;
 	private boolean                           updatable                          = false;
 	private boolean                           forceSplitsOnMissing               = false;
 	private boolean                           binaryClassifications              = true;
@@ -110,6 +110,11 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 
 	public TreeBuilder minLeafInstances(int minLeafInstances) {
 		this.minLeafInstances = minLeafInstances;
+		return this;
+	}
+
+	public TreeBuilder numericTestSplits(int numericTestSplits) {
+		this.numericTestSplits = numericTestSplits;
 		return this;
 	}
 
@@ -293,7 +298,7 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 		}
 		Collections.sort(splitList);
 
-		final double[] split = new double[ORDINAL_TEST_SPLITS - 1];
+		final double[] split = new double[Math.min(numericTestSplits - 1, splitList.size() - 1)];
 		final int indexMultiplier = splitList.size() / (split.length + 1);
 		for (int x = 0; x < split.length; x++) {
 			split[x] = splitList.get((x + 1) * indexMultiplier);
