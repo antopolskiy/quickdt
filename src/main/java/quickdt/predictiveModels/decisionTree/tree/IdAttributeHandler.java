@@ -39,7 +39,7 @@ public class IdAttributeHandler {
 	 * Assumes that the first call will be made in the root node, and will save
 	 * these stats separately in the {@link #totalCounts totalCounts}.
 	 */
-	public void countUniqueValues(int leafHash, Iterable<? extends AbstractInstance> trainingData,
+	public void countUniqueValues(Leaf leaf, Iterable<? extends AbstractInstance> trainingData,
 			Map<Serializable, MutableInt> classifications) {
 
 		Map<Serializable, Integer> idAttributeCounts = new HashMap<>();
@@ -55,23 +55,23 @@ public class IdAttributeHandler {
 			totalCounts = idAttributeCounts;
 		}
 
-		countsMap.put(leafHash, idAttributeCounts);
+		countsMap.put(leaf.hashCode(), idAttributeCounts);
 	}
 
 	public Map<Integer, Map<Serializable, Integer>> getCountsMap() {
 		return countsMap;
 	}
 
-	public Map<Serializable, Integer> getCountForLeaf(int leafHash) {
-		return getCountsMap().get(leafHash);
+	public Map<Serializable, Integer> getCountForLeaf(Leaf leaf) {
+		return getCountsMap().get(leaf.hashCode());
 	}
 
-	public Integer getCountForLeafClass(int leafHash, Serializable classification) {
-		return getCountForLeaf(leafHash).get(classification);
+	public Integer getCountForLeafClass(Leaf leaf, Serializable classification) {
+		return getCountForLeaf(leaf).get(classification);
 	}
 
 	public Integer getCountForMajorityClass(Leaf leaf) {
-		return getCountForLeafClass(leaf.hashCode(), leaf.getBestClassification());
+		return getCountForLeafClass(leaf, leaf.getBestClassification());
 	}
 
 	public Map<Serializable, Integer> getTotalCounts() {

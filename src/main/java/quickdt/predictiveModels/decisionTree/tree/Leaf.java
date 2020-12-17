@@ -8,6 +8,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Iterables;
@@ -156,13 +157,8 @@ public class Leaf extends Node {
 
 	@Override
 	public int hashCode() {
-		int result;
-		long temp;
-		result = depth;
-		temp = Double.doubleToLongBits(exampleCount);
-		result = 31 * result + (int) (temp ^ (temp >>> 32));
-		result = 31 * result + getClassificationCounter().hashCode();
-		return result;
+		return new HashCodeBuilder(17, 37).append(depth).append(exampleCount).append(isTrueChild)
+				.append(classificationCounts).toHashCode();
 	}
 
 	Node getSibling() {

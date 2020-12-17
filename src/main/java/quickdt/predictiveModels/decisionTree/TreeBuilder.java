@@ -321,8 +321,7 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 		}
 
 		if (idAttributeHandler.idAttribute != null) {
-			idAttributeHandler.countUniqueValues(thisLeaf.hashCode(), trainingData,
-					classifications);
+			idAttributeHandler.countUniqueValues(thisLeaf, trainingData, classifications);
 		}
 
 		if (depth >= maxDepth) {
@@ -386,7 +385,7 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 		}
 
 		// Recurse down the false branch
-		bestNode.falseChild = buildTree(bestNode, falseTrainingSet, depth + 1, splits);
+		bestNode.falseChild = buildTree(bestNode, falseTrainingSet, depth + 1, splits, false);
 
 		// And now replace the original split if this is an NumericBranch
 		// todo: this behavior can be extracted into NumericBranch method; other
@@ -649,8 +648,9 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 
 		final Set<Serializable> returnSet = buildReturnSet(valuesWithClassCounters,
 				lastValThatImprovedScore);
-		if (returnSet.isEmpty())
+		if (returnSet.isEmpty()) {
 			return null;
+		}
 
 		return Pair.with(new CategoricalBranch(parent, attribute, returnSet),
 				scoreTracker.getBest());
@@ -905,7 +905,7 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 				}
 				Collection<AbstractInstance> leafData = getData(toReplace, trainingData);
 				Node newNode = buildTree(parent, leafData, leaf.depth,
-						createNumericSplits(leafData));
+						createNumericSplits(leafData), node.isTrueChild());
 				// replace the child that has the same reference as toReplace, intentionally
 				// checking reference using ==
 				if (parent.trueChild == toReplace) {
