@@ -1162,4 +1162,83 @@ public class TreeBuilderTest {
 						+ "0=1.0 (matches=6.0; contaminations=0.0)\n" + "]",
 				tree.getLeaves().toString());
 	}
+
+	@Test
+	public void testFindOptimalSplitOnNumeric() {
+		int maxTreeDepth = 5;
+		int maxCategoricalInSetSize = 3;
+		int minPerVarInstances = 1;
+
+		final TreeBuilder tb = new TreeBuilder().forceSplitOnNull()
+				.maxCategoricalInSetSize(maxCategoricalInSetSize).maxDepth(maxTreeDepth)
+				.minInstancesPerCategoricalVariable(minPerVarInstances).pruneSameCategory()
+				.numericTestSplits(10);
+
+		final List<Instance> instances = loadCsvDataset(0,
+				"quickdt/synthetic/optimalSplitOnNumeric.csv.gz", Arrays.asList(1));
+
+		final Tree tree = tb.buildPredictiveModel(instances);
+		final Node node = tree.node;
+
+		assertEquals(
+				"[Amount > 1000.0->\n" + "manual approve=1.0 (matches=9.0; contaminations=0.0)\n"
+						+ ", Amount <= 1000.0->\n"
+						+ "auto approve=1.0 (matches=6.0; contaminations=0.0)\n" + "]",
+				tree.getLeaves().toString());
+	}
+
+	@Test
+	public void testVeryManyNumericSplits() {
+		int maxTreeDepth = 5;
+		int maxCategoricalInSetSize = 3;
+		int minPerVarInstances = 1;
+
+		final TreeBuilder tb = new TreeBuilder().forceSplitOnNull()
+				.maxCategoricalInSetSize(maxCategoricalInSetSize).maxDepth(maxTreeDepth)
+				.minInstancesPerCategoricalVariable(minPerVarInstances).pruneSameCategory()
+				.numericTestSplits(999);
+
+		final List<Instance> instances = loadCsvDataset(0,
+				"quickdt/synthetic/optimalSplitOnNumeric.csv.gz", Arrays.asList(1));
+
+		final Tree tree = tb.buildPredictiveModel(instances);
+		final Node node = tree.node;
+
+		assertEquals(
+				"[Amount > 1000.0->\n" + "manual approve=1.0 (matches=9.0; contaminations=0.0)\n"
+						+ ", Amount <= 1000.0->\n"
+						+ "auto approve=1.0 (matches=6.0; contaminations=0.0)\n" + "]",
+				tree.getLeaves().toString());
+	}
+
+	@Test
+	public void testIncorrectAssignmentOfEquals() {
+		// this tests suboptimal splits on a numeric variable, in case when
+		// numericTestSplits is low; a failure of this test is expected if the algorithm
+		// will be improved.
+		int maxTreeDepth = 5;
+		int maxCategoricalInSetSize = 3;
+		int minPerVarInstances = 1;
+
+		final TreeBuilder tb = new TreeBuilder().forceSplitOnNull()
+				.maxCategoricalInSetSize(maxCategoricalInSetSize).maxDepth(maxTreeDepth)
+				.minInstancesPerCategoricalVariable(minPerVarInstances).pruneSameCategory()
+				.numericTestSplits(5);
+
+		final List<Instance> instances = loadCsvDataset(0,
+				"quickdt/synthetic/optimalSplitOnNumeric.csv.gz", Arrays.asList(1));
+
+		final Tree tree = tb.buildPredictiveModel(instances);
+		final Node node = tree.node;
+
+		assertEquals(
+				"[Amount > 1100.0->\n" + "manual approve=1.0 (matches=8.0; contaminations=0.0)\n"
+						+ ", Amount > 800.0->Amount <= 1100.0->\n"
+						+ "manual approve=0.5 (matches=1.0; contaminations=1.0)\n"
+						+ "auto approve=0.5 (matches=1.0; contaminations=1.0)\n"
+						+ ", Amount <= 800.0->Amount <= 1100.0->\n"
+						+ "auto approve=1.0 (matches=5.0; contaminations=0.0)\n" + "]",
+				tree.getLeaves().toString());
+
+	}
 }
