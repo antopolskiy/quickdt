@@ -157,7 +157,7 @@ public class Leaf extends Node {
 
 	@Override
 	public int hashCode() {
-		return new HashCodeBuilder(17, 37).append(depth).append(exampleCount).append(isTrueChild)
+		return new HashCodeBuilder(17, 37).append(depth).append(exampleCount).append(guidCounter)
 				.append(classificationCounts).toHashCode();
 	}
 

@@ -385,7 +385,7 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 		}
 
 		// Recurse down the false branch
-		bestNode.falseChild = buildTree(bestNode, falseTrainingSet, depth + 1, splits, false);
+		bestNode.falseChild = buildTree(bestNode, falseTrainingSet, depth + 1, splits);
 
 		// And now replace the original split if this is an NumericBranch
 		// todo: this behavior can be extracted into NumericBranch method; other
@@ -905,7 +905,7 @@ public final class TreeBuilder implements UpdatablePredictiveModelBuilder<Tree> 
 				}
 				Collection<AbstractInstance> leafData = getData(toReplace, trainingData);
 				Node newNode = buildTree(parent, leafData, leaf.depth,
-						createNumericSplits(leafData), node.isTrueChild());
+						createNumericSplits(leafData));
 				// replace the child that has the same reference as toReplace, intentionally
 				// checking reference using ==
 				if (parent.trueChild == toReplace) {

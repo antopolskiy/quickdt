@@ -1005,7 +1005,7 @@ public class TreeBuilderTest {
 		assertEquals("{0=3, 1=3}", tb.getIdAttributeHandler().getTotalCounts().toString());
 		for (Leaf leaf : leaves) {
 			assertEquals(Integer.valueOf(3),
-					tb.getIdAttributeHandler().getCountForLeafClass(leaf.hashCode(), "0"));
+					tb.getIdAttributeHandler().getCountForLeafClass(leaf, "0"));
 
 			assertEquals(Integer.valueOf(3),
 					tb.getIdAttributeHandler().getCountForMajorityClass(leaf));
